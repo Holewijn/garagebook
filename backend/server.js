@@ -234,5 +234,11 @@ app.delete('/api/bikes/:bid/upgrades/:id', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+// ── VERSION ───────────────────────────────────────────────────────────────────
+app.get('/api/version', (req, res) => {
+  const pkg = require('./package.json');
+  res.json({ version: pkg.version, name: pkg.name });
+});
+
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../frontend/index.html')));
 app.listen(PORT, () => console.log(`GarageBook running on port ${PORT}`));

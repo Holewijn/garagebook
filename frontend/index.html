@@ -551,7 +551,12 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-he
         <div id="tab-herinneringen" class="tab-content">
           <div class="page-header">
             <div><div class="page-title">Herinneringen</div><div class="page-sub">APK, olie wisselen, onderhoud op km of datum</div></div>
-            <button class="btn btn-primary" onclick="openModal('herinnering')">+ Herinnering toevoegen</button>
+            <div class="page-actions">
+              <button class="btn" onclick="openAiImportModal()" style="gap:6px">
+                <span>🤖</span> AI intervallen importeren
+              </button>
+              <button class="btn btn-primary" onclick="openModal('herinnering')">+ Herinnering toevoegen</button>
+            </div>
           </div>
           <div class="section"><div class="card-list" id="herinnering-cards"></div></div>
         </div>
@@ -1569,6 +1574,153 @@ async function loadSharePage(token) {
   } catch(e) { console.error(e); }
 }
 
+
+// ── AI IMPORT VOOR BESTAANDE MOTOREN ─────────────────────────────────────────
+let aiImportIntervallen = [];
+
+async function openAiImportModal() {
+  if (!CBid) return toast('Selecteer eerst een motor.', 'err');
+  const bike = bikes.find(b => b.id === CBid);
+  if (!bike) return;
+
+  // Reset modal
+  document.getElementById('ai-import-motor').textContent = bike.merk + ' ' + bike.model;
+  document.getElementById('ai-import-loading').style.display = 'block';
+  document.getElementById('ai-import-resultaat').style.display = 'none';
+  document.getElementById('ai-import-fout').style.display = 'none';
+  document.getElementById('btn-ai-import').disabled = true;
+  document.getElementById('ai-import-loading-title').textContent =
+    'Onderhoudsintervallen zoeken voor ' + bike.merk + ' ' + bike.model + '...';
+
+  document.getElementById('modal-ai-import').classList.add('open');
+
+  try {
+    const data = await api('POST', '/ai/onderhoudsintervallen', {
+      merk: bike.merk,
+      model: bike.model,
+      jaar: bike.jaar
+    });
+
+    aiImportIntervallen = data.intervallen || [];
+
+    document.getElementById('ai-import-loading').style.display = 'none';
+    document.getElementById('ai-import-resultaat').style.display = 'block';
+
+    // Bron banner
+    const banner = document.getElementById('ai-import-bron-banner');
+    if (data.ai) {
+      banner.style.cssText = 'display:flex;align-items:center;gap:8px;padding:.65rem .875rem;border-radius:var(--radius-sm);font-size:12px;font-weight:500;background:var(--green-bg);color:var(--green);border:1px solid var(--green)';
+      banner.innerHTML = '<span>✓</span><span>Gevonden via AI + web search: ' + data.bron + '</span>';
+    } else {
+      banner.style.cssText = 'display:flex;align-items:center;gap:8px;padding:.65rem .875rem;border-radius:var(--radius-sm);font-size:12px;font-weight:500;background:var(--yellow-bg);color:var(--yellow);border:1px solid var(--yellow)';
+      banner.innerHTML = '<span>ℹ</span><span>Generieke intervallen (' + data.bron + ')</span>';
+    }
+
+    renderAiImportLijst();
+    document.getElementById('btn-ai-import').disabled = false;
+
+  } catch(e) {
+    document.getElementById('ai-import-loading').style.display = 'none';
+    document.getElementById('ai-import-fout').style.display = 'block';
+    document.getElementById('ai-import-fout-tekst').textContent = e.message;
+  }
+}
+
+function renderAiImportLijst() {
+  const maxKm = kmCache[CBid] || (bikes.find(b=>b.id===CBid)?.km || 0);
+  const prio = { hoog:'🔴', normaal:'🟡', laag:'🟢' };
+
+  // Filter al bestaande herinneringen (op titel) eruit
+  const bestaandeTitels = new Set(herData.map(h => h.titel.toLowerCase().trim()));
+
+  document.getElementById('ai-import-lijst').innerHTML = aiImportIntervallen.map((it, i) => {
+    const kmTxt = it.km_interval ? 'elke ' + it.km_interval.toLocaleString('nl-NL') + ' km' : '';
+    const datTxt = it.datum_maanden ? 'elke ' + it.datum_maanden + ' maanden' : '';
+    const interval = [kmTxt, datTxt].filter(Boolean).join(' of ');
+    const alBestaat = bestaandeTitels.has(it.titel.toLowerCase().trim());
+    const kmGrens = it.km_interval && maxKm > 0 ? maxKm + it.km_interval : it.km_interval;
+    const kmHint = kmGrens ? ' → eerst bij ' + kmGrens.toLocaleString('nl-NL') + ' km' : '';
+
+    return `<label style="display:flex;align-items:flex-start;gap:.75rem;padding:.65rem .875rem;border:1.5px solid ${alBestaat ? 'var(--border)' : 'var(--border)'};border-radius:var(--radius-sm);cursor:${alBestaat?'default':'pointer'};background:var(--bg);opacity:${alBestaat?'.5':'1'}" id="ai-import-item-${i}">
+      <input type="checkbox" ${alBestaat ? 'disabled' : 'checked'} onchange="updateAiImportCount()" style="margin-top:2px;accent-color:var(--accent);width:16px;height:16px;flex-shrink:0">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:14px;color:var(--ink)">${prio[it.prioriteit]||'🟡'} ${it.titel}</div>
+        <div style="font-size:12px;color:var(--ink4);margin-top:2px">${interval||'Geen interval'}${kmHint}</div>
+        ${alBestaat ? '<div style="font-size:11px;color:var(--ink4);margin-top:2px;font-style:italic">Al aanwezig</div>' : ''}
+      </div>
+      <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;flex-shrink:0;background:${it.prioriteit==='hoog'?'var(--red-bg);color:var(--red)':it.prioriteit==='laag'?'var(--green-bg);color:var(--green)':'var(--yellow-bg);color:var(--yellow)'}">${it.prioriteit}</span>
+    </label>`;
+  }).join('');
+
+  updateAiImportCount();
+}
+
+function updateAiImportCount() {
+  const checked = document.querySelectorAll('#ai-import-lijst input[type=checkbox]:checked').length;
+  document.getElementById('ai-import-count').textContent = checked + ' geselecteerd';
+  // Highlight
+  document.querySelectorAll('#ai-import-lijst label').forEach(label => {
+    const cb = label.querySelector('input');
+    if (!cb.disabled) {
+      label.style.borderColor = cb.checked ? 'var(--accent)' : 'var(--border)';
+      label.style.background  = cb.checked ? 'var(--accent-bg)' : 'var(--bg)';
+    }
+  });
+}
+
+function selectAllImport(select) {
+  document.querySelectorAll('#ai-import-lijst input[type=checkbox]:not(:disabled)').forEach(cb => cb.checked = select);
+  updateAiImportCount();
+}
+
+async function importeerAiIntervallen() {
+  const btn = document.getElementById('btn-ai-import');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Importeren...';
+
+  try {
+    const checkboxes = document.querySelectorAll('#ai-import-lijst input[type=checkbox]');
+    const geselecteerd = aiImportIntervallen.filter((_, i) => checkboxes[i]?.checked && !checkboxes[i]?.disabled);
+
+    if (geselecteerd.length === 0) {
+      toast('Selecteer minimaal één herinnering.', 'err');
+      btn.disabled = false; btn.textContent = 'Herinneringen importeren';
+      return;
+    }
+
+    const maxKm = kmCache[CBid] || (bikes.find(b=>b.id===CBid)?.km || 0);
+
+    await Promise.all(geselecteerd.map(it => {
+      const kmGrens = it.km_interval && maxKm > 0 ? maxKm + it.km_interval : (it.km_interval || null);
+      const vandaag = new Date();
+      let datumGrens = null;
+      if (it.datum_maanden) {
+        vandaag.setMonth(vandaag.getMonth() + it.datum_maanden);
+        datumGrens = vandaag.toISOString().slice(0, 10);
+      }
+      return api('POST', `/bikes/${CBid}/herinneringen`, {
+        titel: it.titel,
+        type: it.km_interval && it.datum_maanden ? 'beide' : it.km_interval ? 'km' : 'datum',
+        km_grens: kmGrens,
+        datum_grens: datumGrens,
+        herhaald: !!it.km_interval,
+        interval_km: it.km_interval || null
+      });
+    }));
+
+    // Herlaad herinneringen
+    herData = await api('GET', `/bikes/${CBid}/herinneringen`);
+    closeModal('ai-import');
+    render();
+    toast(geselecteerd.length + ' herinneringen geïmporteerd! 🔔', 'ok');
+
+  } catch(e) {
+    toast(e.message, 'err');
+    btn.disabled = false;
+    btn.textContent = 'Herinneringen importeren';
+  }
+}
+
 // ── KEYBOARD ──────────────────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
   if(e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));
@@ -1588,5 +1740,49 @@ document.addEventListener('keydown', e => {
   else document.getElementById('auth-screen').style.display='flex';
 })();
 </script>
+
+<!-- AI Import Modal -->
+<div class="modal-overlay" id="modal-ai-import">
+  <div class="modal" style="width:min(620px,100%)">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title">🤖 AI onderhoudsintervallen importeren</div>
+        <div style="font-size:12px;color:var(--ink4);margin-top:2px" id="ai-import-sub">voor <span id="ai-import-motor"></span></div>
+      </div>
+      <button class="modal-close" onclick="closeModal('ai-import')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="ai-import-loading" style="text-align:center;padding:2rem 1rem">
+        <div style="font-size:36px;margin-bottom:.75rem">🔍</div>
+        <div style="font-weight:600;color:var(--ink);margin-bottom:.375rem" id="ai-import-loading-title">Onderhoudsintervallen zoeken…</div>
+        <div style="font-size:13px;color:var(--ink3)">AI zoekt de officiële servicehandleiding op voor jouw motor</div>
+        <div style="margin-top:1rem;display:flex;justify-content:center;gap:4px">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.2s infinite 0s"></div>
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.2s infinite 0.2s"></div>
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.2s infinite 0.4s"></div>
+        </div>
+      </div>
+      <div id="ai-import-resultaat" style="display:none">
+        <div id="ai-import-bron-banner" style="display:flex;align-items:center;gap:8px;padding:.65rem .875rem;border-radius:var(--radius-sm);font-size:12px;font-weight:500;margin-bottom:1rem"></div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:.75rem">Selecteer de herinneringen die je wil importeren:</div>
+        <div id="ai-import-lijst" style="display:flex;flex-direction:column;gap:.5rem;max-height:360px;overflow-y:auto"></div>
+        <div style="margin-top:.875rem;display:flex;align-items:center;gap:.75rem;padding-top:.875rem;border-top:1px solid var(--border)">
+          <button class="btn btn-sm" onclick="selectAllImport(true)">Alles selecteren</button>
+          <button class="btn btn-sm" onclick="selectAllImport(false)">Alles deselecteren</button>
+          <span style="margin-left:auto;font-size:12px;color:var(--ink4)" id="ai-import-count">0 geselecteerd</span>
+        </div>
+      </div>
+      <div id="ai-import-fout" style="display:none;text-align:center;padding:1.5rem">
+        <div style="font-size:32px;margin-bottom:.5rem">⚠️</div>
+        <div style="font-weight:600;color:var(--ink);margin-bottom:.375rem">Kon geen intervallen ophalen</div>
+        <div style="font-size:13px;color:var(--ink3)" id="ai-import-fout-tekst"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('ai-import')">Annuleren</button>
+      <button class="btn btn-primary" id="btn-ai-import" onclick="importeerAiIntervallen()" disabled>Herinneringen importeren</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

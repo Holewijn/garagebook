@@ -4,6 +4,14 @@
 
 GarageBook helpt je het complete verhaal van je motor vast te leggen: onderhoudsbeurten, upgrades, kosten, foto's en herinneringen — allemaal op één plek, voor meerdere gebruikers en meerdere motoren.
 
+## 📸 Schermafbeeldingen
+
+![Dashboard](docs/afbeelding1.png)
+
+![Onderhoudslogboek](docs/afbeelding2.png)
+
+![Herinneringen & AI](docs/afbeelding3.png)
+
 ---
 
 ## ✨ Features

@@ -315,6 +315,75 @@ app.get('/api/version', (req, res) => {
   res.json({ version: pkg.version, name: pkg.name });
 });
 
+
+// ── AI ONDERHOUDSINTERVALLEN ──────────────────────────────────────────────────
+app.post('/api/ai/onderhoudsintervallen', requireAuth, async (req, res) => {
+  const { merk, model, jaar } = req.body;
+  if (!merk || !model) return res.status(400).json({ error: 'Merk en model zijn verplicht.' });
+
+  const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || '';
+  if (!ANTHROPIC_KEY) {
+    return res.json({ intervallen: getGeneriekeIntervallen(merk, model), bron: 'generiek', ai: false });
+  }
+
+  const prompt = `Zoek de officiele onderhoudsintervallen voor de ${merk} ${model}${jaar ? ' (' + jaar + ')' : ''}.
+Geef ALLEEN een JSON array terug zonder markdown of uitleg.
+Formaat exact:
+[{"titel":"Motorolie + filter wisselen","km_interval":6000,"datum_maanden":12,"prioriteit":"hoog"},{"titel":"Luchtfilter vervangen","km_interval":12000,"datum_maanden":24,"prioriteit":"normaal"}]
+Velden: titel (string), km_interval (number km of null), datum_maanden (number of null), prioriteit ("hoog"/"normaal"/"laag").
+Zoek de officiele servicehandleiding of dealerspecificaties. Maximaal 12 items.`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1500,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'Anthropic API fout');
+    }
+
+    const data = await response.json();
+    const tekst = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    const clean = tekst.replace(/```json|```/g, '').trim();
+    const startIdx = clean.indexOf('[');
+    const endIdx = clean.lastIndexOf(']');
+    if (startIdx === -1 || endIdx === -1) throw new Error('Geen JSON array gevonden');
+    const intervallen = JSON.parse(clean.slice(startIdx, endIdx + 1));
+    if (!Array.isArray(intervallen)) throw new Error('Onverwacht formaat');
+    res.json({ intervallen, bron: merk + ' ' + model + ' servicehandleiding (AI + web search)', ai: true });
+  } catch (err) {
+    console.error('AI interval fout:', err.message);
+    res.json({ intervallen: getGeneriekeIntervallen(merk, model), bron: 'generieke onderhoudsintervallen', ai: false, fout: err.message });
+  }
+});
+
+function getGeneriekeIntervallen(merk, model) {
+  return [
+    { titel: 'Motorolie + filter wisselen', km_interval: 6000, datum_maanden: 12, prioriteit: 'hoog' },
+    { titel: 'Luchtfilter vervangen', km_interval: 12000, datum_maanden: 24, prioriteit: 'normaal' },
+    { titel: 'Bougie(s) vervangen', km_interval: 12000, datum_maanden: 24, prioriteit: 'normaal' },
+    { titel: 'Remvloeistof vervangen', km_interval: null, datum_maanden: 24, prioriteit: 'hoog' },
+    { titel: 'Koelvloeistof vervangen', km_interval: null, datum_maanden: 36, prioriteit: 'normaal' },
+    { titel: 'Ketting smeren + spanning', km_interval: 500, datum_maanden: null, prioriteit: 'hoog' },
+    { titel: 'Ketting + tandwielen vervangen', km_interval: 20000, datum_maanden: null, prioriteit: 'normaal' },
+    { titel: 'Remblokken controleren', km_interval: 6000, datum_maanden: 12, prioriteit: 'normaal' },
+    { titel: 'Bandenspanning controleren', km_interval: 500, datum_maanden: 1, prioriteit: 'hoog' },
+    { titel: 'APK keuring', km_interval: null, datum_maanden: 12, prioriteit: 'hoog' },
+  ];
+}
+
 // ── CATCH-ALL ─────────────────────────────────────────────────────────────────
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../frontend/index.html')));
 app.listen(PORT, () => console.log(`GarageBook v${require('./package.json').version} running on port ${PORT}`));

@@ -323,6 +323,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-he
 /* ── SPINNER ── */
 .spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
 
 /* ── PWA INSTALL ── */
 #pwa-banner{display:none;background:var(--accent-bg);border-bottom:1px solid #bfdbfe;padding:.75rem 1.5rem;align-items:center;justify-content:space-between;gap:1rem;font-size:13px;color:var(--accent)}
@@ -610,12 +611,20 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-he
 
 <!-- Motor -->
 <div class="modal-overlay" id="modal-add-bike">
-  <div class="modal">
-    <div class="modal-head"><div class="modal-title">Motor toevoegen</div><button class="modal-close" onclick="closeModal('add-bike')">×</button></div>
-    <div class="modal-body">
+  <div class="modal" style="width:min(620px,100%)">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="add-bike-modal-title">Motor toevoegen</div>
+        <div style="font-size:12px;color:var(--ink4);margin-top:2px" id="add-bike-step-indicator">Stap 1 van 2 — Motorgegevens</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('add-bike')">×</button>
+    </div>
+
+    <!-- STAP 1: Motorgegevens -->
+    <div id="add-bike-stap1" class="modal-body">
       <div class="form-row">
-        <div class="form-group"><label>Merk</label><input type="text" id="bk-merk" placeholder="Yamaha, Honda…"></div>
-        <div class="form-group"><label>Model</label><input type="text" id="bk-model" placeholder="MT-07, CB500F…"></div>
+        <div class="form-group"><label>Merk</label><input type="text" id="bk-merk" placeholder="CFMOTO, Yamaha, Honda…" autocomplete="off"></div>
+        <div class="form-group"><label>Model</label><input type="text" id="bk-model" placeholder="800MT, MT-07, CB500F…" autocomplete="off"></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>Bouwjaar</label><input type="number" id="bk-jaar" placeholder="2021"></div>
@@ -635,7 +644,49 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-he
         </div>
       </div>
     </div>
-    <div class="modal-foot"><button class="btn" onclick="closeModal('add-bike')">Annuleren</button><button class="btn btn-primary" onclick="saveBike()">Toevoegen</button></div>
+
+    <!-- STAP 2: AI Onderhoudsintervallen -->
+    <div id="add-bike-stap2" class="modal-body" style="display:none">
+      <div id="ai-loading" style="text-align:center;padding:2rem 1rem">
+        <div style="font-size:36px;margin-bottom:.75rem">🔍</div>
+        <div style="font-weight:600;color:var(--ink);margin-bottom:.375rem" id="ai-loading-title">Onderhoudsintervallen zoeken…</div>
+        <div style="font-size:13px;color:var(--ink3)" id="ai-loading-sub">AI zoekt de officiële servicehandleiding op voor jouw motor</div>
+        <div style="margin-top:1rem;display:flex;justify-content:center;gap:4px" id="ai-dots">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.2s infinite 0s"></div>
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.2s infinite 0.2s"></div>
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.2s infinite 0.4s"></div>
+        </div>
+      </div>
+      <div id="ai-resultaat" style="display:none">
+        <div id="ai-bron-banner" style="display:flex;align-items:center;gap:8px;padding:.65rem .875rem;border-radius:var(--radius-sm);font-size:12px;font-weight:500;margin-bottom:1rem"></div>
+        <div style="font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:.75rem">Selecteer de herinneringen die je wil importeren:</div>
+        <div id="ai-intervallen-lijst" style="display:flex;flex-direction:column;gap:.5rem;max-height:340px;overflow-y:auto"></div>
+        <div style="margin-top:.875rem;display:flex;align-items:center;gap:.75rem;padding-top:.875rem;border-top:1px solid var(--border)">
+          <button class="btn btn-sm" onclick="selectAllIntervallen(true)">Alles selecteren</button>
+          <button class="btn btn-sm" onclick="selectAllIntervallen(false)">Alles deselecteren</button>
+          <span style="margin-left:auto;font-size:12px;color:var(--ink4)" id="ai-selected-count">0 geselecteerd</span>
+        </div>
+      </div>
+      <div id="ai-fout" style="display:none;text-align:center;padding:1.5rem">
+        <div style="font-size:32px;margin-bottom:.5rem">⚠️</div>
+        <div style="font-weight:600;color:var(--ink);margin-bottom:.375rem">Kon geen intervallen ophalen</div>
+        <div style="font-size:13px;color:var(--ink3)" id="ai-fout-tekst">Er is iets misgegaan bij het ophalen van de onderhoudsintervallen.</div>
+      </div>
+    </div>
+
+    <div class="modal-foot" id="add-bike-foot-1">
+      <button class="btn" onclick="closeModal('add-bike')">Annuleren</button>
+      <button class="btn" onclick="saveBike(false)">Toevoegen zonder herinneringen</button>
+      <button class="btn btn-primary" id="btn-volgende" onclick="addBikeStap2()">
+        Volgende — AI herinneringen →
+      </button>
+    </div>
+    <div class="modal-foot" id="add-bike-foot-2" style="display:none">
+      <button class="btn" onclick="addBikeBackToStap1()">← Terug</button>
+      <button class="btn btn-primary" id="btn-importeren" onclick="saveBikeMetHerinneringen()" disabled>
+        Motor + herinneringen toevoegen
+      </button>
+    </div>
   </div>
 </div>
 
@@ -925,15 +976,160 @@ function showTabs()   { document.getElementById('no-bike').style.display='none';
 
 function selIcon(el) { document.querySelectorAll('.icon-opt').forEach(e=>e.classList.remove('selected')); el.classList.add('selected'); chosenIcon=el.dataset.icon; }
 
-async function saveBike() {
+// ── AI ONDERHOUDSINTERVALLEN FLOW ────────────────────────────────────────────
+let aiIntervallen = [];
+let nieuweMotorId = null;
+
+function addBikeBackToStap1() {
+  document.getElementById('add-bike-stap1').style.display='block';
+  document.getElementById('add-bike-stap2').style.display='none';
+  document.getElementById('add-bike-foot-1').style.display='flex';
+  document.getElementById('add-bike-foot-2').style.display='none';
+  document.getElementById('add-bike-step-indicator').textContent='Stap 1 van 2 — Motorgegevens';
+}
+
+async function addBikeStap2() {
+  const merk=document.getElementById('bk-merk').value.trim();
+  const model=document.getElementById('bk-model').value.trim();
+  if (!merk||!model) return toast('Vul merk en model in.','err');
+
+  // Ga naar stap 2
+  document.getElementById('add-bike-stap1').style.display='none';
+  document.getElementById('add-bike-stap2').style.display='block';
+  document.getElementById('add-bike-foot-1').style.display='none';
+  document.getElementById('add-bike-foot-2').style.display='flex';
+  document.getElementById('add-bike-step-indicator').textContent='Stap 2 van 2 — AI zoekt onderhoudsintervallen';
+  document.getElementById('btn-importeren').disabled=true;
+  document.getElementById('ai-loading').style.display='block';
+  document.getElementById('ai-resultaat').style.display='none';
+  document.getElementById('ai-fout').style.display='none';
+
+  const jaar=document.getElementById('bk-jaar').value;
+  document.getElementById('ai-loading-title').textContent=`Onderhoudsintervallen zoeken voor ${merk} ${model}...`;
+
+  try {
+    const data = await api('POST','/ai/onderhoudsintervallen',{merk,model,jaar});
+    aiIntervallen = data.intervallen || [];
+    document.getElementById('ai-loading').style.display='none';
+    document.getElementById('ai-resultaat').style.display='block';
+
+    // Bron banner
+    const banner=document.getElementById('ai-bron-banner');
+    if (data.ai) {
+      banner.style.background='var(--green-bg)';banner.style.color='var(--green)';
+      banner.style.border='1px solid var(--green)';
+      banner.innerHTML='<span>✓</span><span>Gevonden via AI + web search: '+data.bron+'</span>';
+    } else {
+      banner.style.background='var(--yellow-bg)';banner.style.color='var(--yellow)';
+      banner.style.border='1px solid var(--yellow)';
+      banner.innerHTML='<span>ℹ</span><span>Generieke intervallen gebruikt ('+data.bron+')</span>';
+    }
+
+    // Render intervallen
+    renderAiIntervallen();
+    document.getElementById('btn-importeren').disabled=false;
+  } catch(e) {
+    document.getElementById('ai-loading').style.display='none';
+    document.getElementById('ai-fout').style.display='block';
+    document.getElementById('ai-fout-tekst').textContent=e.message;
+    document.getElementById('btn-importeren').disabled=true;
+  }
+}
+
+function renderAiIntervallen() {
+  const list=document.getElementById('ai-intervallen-lijst');
+  const prio={'hoog':'🔴','normaal':'🟡','laag':'🟢'};
+  list.innerHTML=aiIntervallen.map((it,i)=>{
+    const kmTxt=it.km_interval?`elke ${it.km_interval.toLocaleString('nl-NL')} km`:'';
+    const datTxt=it.datum_maanden?`elke ${it.datum_maanden} maanden`:'';
+    const interval=[kmTxt,datTxt].filter(Boolean).join(' of ');
+    return `<label style="display:flex;align-items:flex-start;gap:.75rem;padding:.65rem .875rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:all .15s;background:var(--bg)" id="ai-item-${i}">
+      <input type="checkbox" checked onchange="updateAiSelection()" style="margin-top:2px;accent-color:var(--accent);width:16px;height:16px;flex-shrink:0">
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:14px;color:var(--ink)">${prio[it.prioriteit]||'🟡'} ${it.titel}</div>
+        <div style="font-size:12px;color:var(--ink4);margin-top:2px">${interval||'Geen interval opgegeven'}</div>
+      </div>
+      <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;background:${it.prioriteit==='hoog'?'var(--red-bg);color:var(--red)':it.prioriteit==='laag'?'var(--green-bg);color:var(--green)':'var(--yellow-bg);color:var(--yellow)'}">${it.prioriteit}</span>
+    </label>`;
+  }).join('');
+  updateAiSelection();
+}
+
+function updateAiSelection() {
+  const checked=document.querySelectorAll('#ai-intervallen-lijst input[type=checkbox]:checked').length;
+  document.getElementById('ai-selected-count').textContent=checked+' geselecteerd';
+  // Highlight geselecteerde items
+  document.querySelectorAll('#ai-intervallen-lijst label').forEach(label=>{
+    const cb=label.querySelector('input');
+    label.style.borderColor=cb.checked?'var(--accent)':'var(--border)';
+    label.style.background=cb.checked?'var(--accent-bg)':'var(--bg)';
+  });
+}
+
+function selectAllIntervallen(select) {
+  document.querySelectorAll('#ai-intervallen-lijst input[type=checkbox]').forEach(cb=>cb.checked=select);
+  updateAiSelection();
+}
+
+async function saveBike(withAI=true) {
   const merk=document.getElementById('bk-merk').value.trim();
   const model=document.getElementById('bk-model').value.trim();
   if (!merk||!model) return toast('Vul merk en model in.','err');
   try {
     const b=await api('POST','/bikes',{merk,model,jaar:document.getElementById('bk-jaar').value,km:parseInt(document.getElementById('bk-km').value)||0,kenteken:document.getElementById('bk-kenteken').value.trim(),icon:chosenIcon});
-    bikes.push(b); ['bk-merk','bk-model','bk-jaar','bk-km','bk-kenteken'].forEach(id=>document.getElementById(id).value='');
-    closeModal('add-bike'); selectBike(b.id); toast('Motor toegevoegd!');
-  } catch(e) { toast(e.message,'err'); }
+    bikes.push(b);
+    ['bk-merk','bk-model','bk-jaar','bk-km','bk-kenteken'].forEach(id=>document.getElementById(id).value='');
+    closeModal('add-bike');
+    await selectBike(b.id);
+    toast('Motor toegevoegd!');
+    return b;
+  } catch(e) { toast(e.message,'err'); return null; }
+}
+
+async function saveBikeMetHerinneringen() {
+  const btn=document.getElementById('btn-importeren');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Toevoegen...';
+  try {
+    // Stap 1: motor aanmaken
+    const merk=document.getElementById('bk-merk').value.trim();
+    const model=document.getElementById('bk-model').value.trim();
+    if (!merk||!model) return toast('Vul merk en model in.','err');
+    const b=await api('POST','/bikes',{merk,model,jaar:document.getElementById('bk-jaar').value,km:parseInt(document.getElementById('bk-km').value)||0,kenteken:document.getElementById('bk-kenteken').value.trim(),icon:chosenIcon});
+    bikes.push(b);
+    ['bk-merk','bk-model','bk-jaar','bk-km','bk-kenteken'].forEach(id=>document.getElementById(id).value='');
+
+    // Stap 2: geselecteerde herinneringen importeren
+    const checkboxes=document.querySelectorAll('#ai-intervallen-lijst input[type=checkbox]');
+    const geselecteerd=aiIntervallen.filter((_,i)=>checkboxes[i]?.checked);
+    const currentKm=parseInt(document.getElementById('bk-km').value)||0;
+
+    await Promise.all(geselecteerd.map(it => {
+      const kmGrens=it.km_interval&&currentKm>0 ? currentKm+it.km_interval : (it.km_interval||null);
+      const vandaag=new Date();
+      let datumGrens=null;
+      if(it.datum_maanden) {
+        vandaag.setMonth(vandaag.getMonth()+it.datum_maanden);
+        datumGrens=vandaag.toISOString().slice(0,10);
+      }
+      return api('POST',`/bikes/${b.id}/herinneringen`,{
+        titel:it.titel,
+        type:it.km_interval&&it.datum_maanden?'beide':it.km_interval?'km':'datum',
+        km_grens:kmGrens,
+        datum_grens:datumGrens,
+        herhaald:!!it.km_interval,
+        interval_km:it.km_interval||null
+      });
+    }));
+
+    closeModal('add-bike');
+    await selectBike(b.id);
+    // Ga direct naar herinneringen tab
+    switchTab('herinneringen',document.querySelector('[onclick*="herinneringen"]'));
+    toast(`Motor + ${geselecteerd.length} herinneringen toegevoegd! 🔔`,'ok');
+  } catch(e) {
+    toast(e.message,'err');
+    btn.disabled=false; btn.textContent='Motor + herinneringen toevoegen';
+  }
 }
 
 async function delBike(e,id) {

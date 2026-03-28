@@ -32,6 +32,7 @@ db.exec(`
     id TEXT PRIMARY KEY, user_id INTEGER NOT NULL,
     merk TEXT NOT NULL, model TEXT NOT NULL, jaar TEXT,
     km INTEGER DEFAULT 0, kenteken TEXT, icon TEXT DEFAULT '🏍️',
+    share_token TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   );
@@ -49,10 +50,18 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (bike_id) REFERENCES bikes(id) ON DELETE CASCADE
   );
+  CREATE TABLE IF NOT EXISTS herinneringen (
+    id TEXT PRIMARY KEY, bike_id TEXT NOT NULL, user_id INTEGER NOT NULL,
+    titel TEXT NOT NULL, type TEXT DEFAULT 'km',
+    km_grens INTEGER, datum_grens TEXT,
+    herhaald INTEGER DEFAULT 0, interval_km INTEGER,
+    actief INTEGER DEFAULT 1,
+    created_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (bike_id) REFERENCES bikes(id) ON DELETE CASCADE
+  );
   CREATE TABLE IF NOT EXISTS _migrations (key TEXT PRIMARY KEY);
 `);
 
-// Migraties voor bestaande databases
 function migrate(key, sql) {
   if (!db.prepare('SELECT key FROM _migrations WHERE key=?').get(key)) {
     try { db.exec(sql); } catch {}
@@ -63,6 +72,7 @@ migrate('log_foto',      'ALTER TABLE logboek ADD COLUMN foto TEXT');
 migrate('log_notities',  'ALTER TABLE logboek ADD COLUMN notities TEXT');
 migrate('up_foto',       'ALTER TABLE upgrades ADD COLUMN foto TEXT');
 migrate('up_beschr',     'ALTER TABLE upgrades ADD COLUMN beschrijving TEXT');
+migrate('bike_share',    'ALTER TABLE bikes ADD COLUMN share_token TEXT');
 
 // ── FOTO UPLOAD ───────────────────────────────────────────────────────────────
 const storage = multer.diskStorage({
@@ -73,8 +83,7 @@ const storage = multer.diskStorage({
   }
 });
 const upload = multer({
-  storage,
-  limits: { fileSize: 8 * 1024 * 1024 },
+  storage, limits: { fileSize: 8 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const ok = ['image/jpeg','image/png','image/webp','image/gif'].includes(file.mimetype);
     cb(ok ? null : new Error('Alleen afbeeldingen toegestaan.'), ok);
@@ -99,8 +108,9 @@ function requireAuth(req, res, next) {
 }
 
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function shareToken() { return require('crypto').randomBytes(20).toString('hex'); }
 function owned(bikeId, userId) { return db.prepare('SELECT id FROM bikes WHERE id=? AND user_id=?').get(bikeId, userId); }
-function delFile(filePath) { if (filePath) { try { fs.unlinkSync(path.join(DATA_DIR, filePath.replace(/^\/uploads\//,'uploads/'))); } catch {} } }
+function delFile(fp) { if (fp) { try { fs.unlinkSync(path.join(DATA_DIR, fp.replace(/^\/uploads\//,'uploads/'))); } catch {} } }
 
 // ── UPLOAD ────────────────────────────────────────────────────────────────────
 app.post('/api/upload', requireAuth, upload.single('foto'), (req, res) => {
@@ -164,6 +174,37 @@ app.delete('/api/bikes/:id', requireAuth, (req, res) => {
     return res.status(404).json({ error: 'Niet gevonden.' });
   db.prepare('DELETE FROM bikes WHERE id=?').run(req.params.id);
   res.json({ ok: true });
+});
+
+// ── DEELLINK ──────────────────────────────────────────────────────────────────
+// Deellink aanmaken of ophalen
+app.post('/api/bikes/:id/share', requireAuth, (req, res) => {
+  const b = db.prepare('SELECT * FROM bikes WHERE id=? AND user_id=?').get(req.params.id, req.userId);
+  if (!b) return res.status(404).json({ error: 'Niet gevonden.' });
+  let token = b.share_token;
+  if (!token) {
+    token = shareToken();
+    db.prepare('UPDATE bikes SET share_token=? WHERE id=?').run(token, req.params.id);
+  }
+  res.json({ token, url: `/share/${token}` });
+});
+
+// Deellink verwijderen
+app.delete('/api/bikes/:id/share', requireAuth, (req, res) => {
+  if (!db.prepare('SELECT id FROM bikes WHERE id=? AND user_id=?').get(req.params.id, req.userId))
+    return res.status(404).json({ error: 'Niet gevonden.' });
+  db.prepare('UPDATE bikes SET share_token=NULL WHERE id=?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+// Publieke read-only data via share token
+app.get('/api/share/:token', (req, res) => {
+  const bike = db.prepare('SELECT * FROM bikes WHERE share_token=?').get(req.params.token);
+  if (!bike) return res.status(404).json({ error: 'Deellink niet gevonden of verlopen.' });
+  const logboek  = db.prepare('SELECT * FROM logboek WHERE bike_id=? ORDER BY datum DESC').all(bike.id);
+  const upgrades = db.prepare('SELECT * FROM upgrades WHERE bike_id=? ORDER BY datum DESC').all(bike.id);
+  const owner    = db.prepare('SELECT naam FROM users WHERE id=?').get(bike.user_id);
+  res.json({ bike: { ...bike, share_token: undefined, user_id: undefined }, logboek, upgrades, owner: owner?.naam });
 });
 
 // ── LOGBOEK ───────────────────────────────────────────────────────────────────
@@ -234,11 +275,46 @@ app.delete('/api/bikes/:bid/upgrades/:id', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+// ── HERINNERINGEN ─────────────────────────────────────────────────────────────
+app.get('/api/bikes/:bid/herinneringen', requireAuth, (req, res) => {
+  if (!owned(req.params.bid, req.userId)) return res.status(404).json({ error: 'Motor niet gevonden.' });
+  res.json(db.prepare('SELECT * FROM herinneringen WHERE bike_id=? ORDER BY created_at DESC').all(req.params.bid));
+});
+
+app.post('/api/bikes/:bid/herinneringen', requireAuth, (req, res) => {
+  if (!owned(req.params.bid, req.userId)) return res.status(404).json({ error: 'Motor niet gevonden.' });
+  const { titel, type, km_grens, datum_grens, herhaald, interval_km } = req.body;
+  if (!titel) return res.status(400).json({ error: 'Titel is verplicht.' });
+  const id = uid();
+  db.prepare('INSERT INTO herinneringen (id,bike_id,user_id,titel,type,km_grens,datum_grens,herhaald,interval_km) VALUES (?,?,?,?,?,?,?,?,?)')
+    .run(id, req.params.bid, req.userId, titel, type||'km', km_grens||null, datum_grens||null, herhaald?1:0, interval_km||null);
+  res.status(201).json(db.prepare('SELECT * FROM herinneringen WHERE id=?').get(id));
+});
+
+app.put('/api/bikes/:bid/herinneringen/:id', requireAuth, (req, res) => {
+  const it = db.prepare('SELECT * FROM herinneringen WHERE id=? AND bike_id=? AND user_id=?').get(req.params.id, req.params.bid, req.userId);
+  if (!it) return res.status(404).json({ error: 'Niet gevonden.' });
+  const { titel, type, km_grens, datum_grens, herhaald, interval_km, actief } = req.body;
+  db.prepare('UPDATE herinneringen SET titel=?,type=?,km_grens=?,datum_grens=?,herhaald=?,interval_km=?,actief=? WHERE id=?')
+    .run(titel||it.titel, type||it.type, km_grens??it.km_grens, datum_grens??it.datum_grens,
+        herhaald!==undefined?(herhaald?1:0):it.herhaald, interval_km??it.interval_km,
+        actief!==undefined?(actief?1:0):it.actief, req.params.id);
+  res.json(db.prepare('SELECT * FROM herinneringen WHERE id=?').get(req.params.id));
+});
+
+app.delete('/api/bikes/:bid/herinneringen/:id', requireAuth, (req, res) => {
+  const it = db.prepare('SELECT * FROM herinneringen WHERE id=? AND bike_id=? AND user_id=?').get(req.params.id, req.params.bid, req.userId);
+  if (!it) return res.status(404).json({ error: 'Niet gevonden.' });
+  db.prepare('DELETE FROM herinneringen WHERE id=?').run(req.params.id);
+  res.json({ ok: true });
+});
+
 // ── VERSION ───────────────────────────────────────────────────────────────────
 app.get('/api/version', (req, res) => {
   const pkg = require('./package.json');
   res.json({ version: pkg.version, name: pkg.name });
 });
 
+// ── CATCH-ALL ─────────────────────────────────────────────────────────────────
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../frontend/index.html')));
-app.listen(PORT, () => console.log(`GarageBook running on port ${PORT}`));
+app.listen(PORT, () => console.log(`GarageBook v${require('./package.json').version} running on port ${PORT}`));

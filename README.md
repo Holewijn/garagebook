@@ -1,122 +1,345 @@
 # 🏍️ GarageBook
 
-Digitaal motoronderhoud- en upgradelogboek. Selfhosted op Proxmox LXC.
+> **Digitaal motoronderhoud- en upgradelogboek** — selfhosted op Proxmox LXC, bereikbaar via je eigen domein.
 
-## Features
+GarageBook helpt je het complete verhaal van je motor vast te leggen: onderhoudsbeurten, upgrades, kosten, foto's en herinneringen — allemaal op één plek, voor meerdere gebruikers en meerdere motoren.
 
-- Gebruikersregistratie & login (JWT)
-- Meerdere motoren per account
-- Onderhoudslogboek met foto's, beschrijvingen en kosten
-- Upgrades & parts bijhouden
-- Kostenanalyse en tijdlijn
-- Automatische dagelijkse backups
-- Responsive — werkt op mobiel, tablet en desktop
+---
 
-## Tech stack
+## 📸 Schermafbeeldingen
+
+### Dashboard
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  🏍️ GarageBook  v2.3.1          Michiel        🌙  🖨️  Uitloggen │
+├──────────────┬──────────────────────────────────────────────────┤
+│              │  CFMOTO 800MTX                                   │
+│  🏍️ Motoren   │  2022 · 18.240 km                                │
+│              │                                                  │
+│  CFMOTO 800  │  ┌──────────┐ ┌──────────┐ ┌──────┐ ┌────────┐  │
+│  18.240 km ● │  │ €4.280   │ │  18.240  │ │  7   │ │   12   │  │
+│              │  │ Kosten   │ │  Km-stand│ │Upgr. │ │Beurten │  │
+│  🏍️ Honda CB  │  └──────────┘ └──────────┘ └──────┘ └────────┘  │
+│  12.100 km   │                                                  │
+│              │  🔔 1 herinnering vereist aandacht               │
+│  + Toevoegen │  ⚠️ APK keuring — verlopen                       │
+│              │                                                  │
+│  Menu        │  Recente activiteit                 Alles →      │
+│  Dashboard ● │  ┌─────────────────────────────────────────────┐ │
+│  Logboek     │  │ 📷 Nieuwe olie Motul 300V  7-2-2026  €89   │ │
+│  Upgrades    │  │ 📷 Nieuwe tandwielset      7-1-2026  €185  │ │
+│  🔔 Herinne. │  │ 📷 Linker stuurschakelaar  2-1-2026  €45   │ │
+│  Statistieken│  └─────────────────────────────────────────────┘ │
+│  Tijdlijn    │                                                  │
+│  Deellink    │                                                  │
+└──────────────┴──────────────────────────────────────────────────┘
+```
+
+### Onderhoudslogboek — kaartweergave met foto's
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Alle  Onderhoud  Reparatie  Inspectie  Vloeistoffen            │
+│  Sorteren: Datum↓  Kosten  Km                                   │
+├─────────────────────────────────────────────────────────────────┤
+│ ┌──────┐  Nieuwe olie Motul 300V 15W50 met lang oliefilter      │
+│ │ 📷   │  Motorolie Motul 300V met lang oliefilter, deksel      │
+│ │[foto]│  vervangen voor de lange versie.                       │
+│ └──────┘  7-2-2026  🟢 Onderhoud  €89  18.240 km               │
+│           [✏️ Aanpassen]  [🗑 Verwijder]                         │
+├─────────────────────────────────────────────────────────────────┤
+│ ┌──────┐  Nieuwe tandwielset                                    │
+│ │ 📷   │  15 voor, 44 achter — de heilige graal.               │
+│ │[foto]│  7-1-2026  🟢 Onderhoud  €185  17.900 km              │
+│ └──────┘  [✏️ Aanpassen]  [🗑 Verwijder]                         │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### AI Onderhoudsintervallen
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  🤖 AI onderhoudsintervallen importeren                     ×   │
+│  voor CFMOTO 800MTX                                             │
+├─────────────────────────────────────────────────────────────────┤
+│  🔍 Onderhoudsintervallen zoeken voor CFMOTO 800MTX...          │
+│                                                                 │
+│  ✓ Gevonden via AI + web search: CFMOTO 800MTX servicehandl.   │
+│                                                                 │
+│  Selecteer de herinneringen die je wil importeren:              │
+│                                                                 │
+│  ☑ 🔴 Motorolie + filter wisselen   elke 6.000 km  [hoog]      │
+│        → eerst bij 24.240 km                                    │
+│  ☑ 🔴 Ketting smeren + spanning     elke 500 km    [hoog]      │
+│        → eerst bij 18.740 km                                    │
+│  ☑ 🟡 Luchtfilter vervangen         elke 12.000 km [normaal]   │
+│  ☑ 🔴 Remvloeistof vervangen        elke 24 maanden [hoog]     │
+│  ☑ 🔴 APK keuring                   elke 12 maanden [hoog]     │
+│  ☐ 🟢 Koelvloeistof                 elke 36 maanden [laag]     │
+│                                                                 │
+│  [Alles selecteren] [Alles deselecteren]    5 geselecteerd      │
+├─────────────────────────────────────────────────────────────────┤
+│  [Annuleren]              [Herinneringen importeren →]          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Herinneringen — voortgangsbalken
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Herinneringen                    [🤖 AI importeren] [+ Nieuw]  │
+├─────────────────────────────────────────────────────────────────┤
+│  🔴  APK keuring                                                │
+│      3 dagen te laat                                            │
+│                                                                 │
+│  🟠  Motorolie + filter wisselen                                │
+│      Nog 240 km te gaan (bij 18.480 km)                        │
+│      ████████████████████████░░░░░  92%                         │
+│                                                                 │
+│  🟢  Luchtfilter vervangen                                      │
+│      Nog 5.760 km te gaan                                       │
+│      ████████░░░░░░░░░░░░░░░░░░░░  32%                          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Statistieken — kosten per jaar
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Statistieken                                                   │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐           │
+│  │ €4.280   │ │ €1.820   │ │  €152    │ │  €0.24   │           │
+│  │ Totaal   │ │ Dit jaar │ │ /maand   │ │ /km      │           │
+│  └──────────┘ └──────────┘ └──────────┘ └──────────┘           │
+│                                                                 │
+│  Kosten per jaar                                                │
+│  €1820 ████                                                     │
+│  €1800 ████                                                     │
+│  €700  ██                                                       │
+│         2022     2023     2024■                                 │
+│                                                                 │
+│  Per categorie                                                  │
+│  Upgrades  ████████████████████████████  €2.340                 │
+│  Onderhoud ████████████████             €1.250                  │
+│  Reparatie █████                         €380                   │
+│  Inspectie ████                          €310                   │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## ✨ Features
+
+| Feature | Beschrijving |
+|---|---|
+| 👤 **Gebruikersaccounts** | Registreren met e-mail + wachtwoord, JWT-sessies van 7 dagen |
+| 🏍️ **Multi-motor** | Onbeperkt motoren per account, elk met eigen logboek |
+| 📋 **Onderhoudslogboek** | Beurten, reparaties, inspecties en vloeistoffen bijhouden |
+| ⭐ **Upgrades & Parts** | Modificaties en onderdelen met merk, categorie en kosten |
+| 📷 **Foto's** | Foto uploaden per logboek-item of upgrade (max 8MB) |
+| 🔔 **Herinneringen** | Op km-stand, datum of beide — met voortgangsbalk en herhaling |
+| 🤖 **AI intervallen** | Automatisch officiële onderhoudsintervallen opzoeken via AI + web search |
+| 📊 **Statistieken** | Kosten per jaar, per categorie, per km en per maand |
+| 🔗 **Deellink** | Motor read-only delen met derden, geen account nodig |
+| 📄 **PDF export** | Volledige logboek afdrukken via de browser |
+| 🌙 **Donkere modus** | Volgt systeemvoorkeur, handmatig te togglen |
+| 📱 **PWA** | Installeerbaar als app op iPhone en Android |
+| ↕️ **Sorteren** | Logboek en upgrades sorteren op datum, kosten of km |
+| 🔍 **Lightbox** | Foto's vergroten door erop te klikken |
+| 🔢 **Versienummer** | Altijd zichtbaar in de topbar — handig na updates |
+
+---
+
+## 🛠️ Tech stack
 
 | Laag | Tech |
 |---|---|
-| Frontend | Vanilla HTML/CSS/JS (single file) |
+| Frontend | Vanilla HTML/CSS/JS (één bestand, geen build stap) |
 | Backend | Node.js + Express |
-| Database | SQLite (via better-sqlite3) |
+| Database | SQLite via better-sqlite3 |
 | Auth | JWT + bcrypt |
+| Foto's | Multer — opgeslagen op schijf |
+| AI | Anthropic Claude Haiku + web search |
 | Hosting | Proxmox LXC — Ubuntu 22.04 |
-| Proxy | Nginx (via Nginx Proxy Manager) |
+| Proxy | Nginx Proxy Manager |
+| HTTPS | Let's Encrypt via Cloudflare |
 
 ---
 
-## Installatie op Proxmox
+## 🚀 Installatie op Proxmox
 
 ### Vereisten
-- Proxmox VE 7 of 8
-- Root toegang op de Proxmox host
+- Proxmox VE 7 of 8, root toegang
 - Internetverbinding vanuit de container
 
-### Stap 1 — Repository klonen op de Proxmox host
-
 ```bash
+# Repository klonen op de Proxmox host
 apt-get install -y git
-git clone https://github.com/JOUW_GEBRUIKERSNAAM/garagebook.git /root/garagebook-repo
+git clone https://github.com/JOUW_NAAM/garagebook.git /root/garagebook-repo
 cd /root/garagebook-repo
-chmod +x install-garagebook.sh update-from-github.sh update-garagebook.sh
+chmod +x install-garagebook.sh update-from-github.sh
 bash install-garagebook.sh
 ```
 
----
-
-## Updates uitrollen
-
-### Optie A — Handmatig vanaf de Proxmox host
-
-```bash
-GITHUB_REPO=JOUW_GEBRUIKERSNAAM/garagebook bash /root/garagebook-repo/update-from-github.sh 118
-```
-
-### Optie B — Automatisch via GitHub Actions
-
-Elke push naar `main` deployt automatisch naar je server.
-
-**1. SSH-sleutelpaar aanmaken op de Proxmox host:**
-```bash
-ssh-keygen -t ed25519 -C "github-deploy" -f ~/.ssh/github_deploy -N ""
-cat ~/.ssh/github_deploy.pub >> ~/.ssh/authorized_keys
-cat ~/.ssh/github_deploy   # kopieer dit als SECRET
-```
-
-**2. Secrets instellen in GitHub:**
-
-Ga naar repo → **Settings** → **Secrets and variables** → **Actions**
-
-| Secret | Waarde |
-|---|---|
-| `SERVER_HOST` | IP van je Proxmox host |
-| `SERVER_USER` | `root` |
-| `SERVER_SSH_KEY` | Inhoud van `~/.ssh/github_deploy` |
-| `SERVER_PORT` | `22` |
-| `CT_ID` | Container ID, bijv. `118` |
-
-**3. Klaar** — elke push naar `main` triggert automatisch een deploy. Handmatig triggeren kan via **Actions** → **Deploy naar server** → **Run workflow**.
+Het script vraagt interactief om container ID, netwerk, opslag, domein en HTTPS.
 
 ---
 
-## Projectstructuur
+## 🔄 Updates uitrollen
 
+```bash
+# Vanuit container 118 (na eenmalige setup)
+garagebook-update
 ```
-garagebook/
-├── backend/
-│   ├── server.js
-│   └── package.json
-├── frontend/
-│   └── index.html
-├── .github/
-│   └── workflows/
-│       └── deploy.yml
-├── install-garagebook.sh
-├── update-from-github.sh
-├── update-garagebook.sh
-├── .gitignore
-└── README.md
+
+Of handmatig:
+```bash
+GITHUB_REPO=JOUW_NAAM/garagebook bash /root/garagebook-repo/update-from-github.sh 118
 ```
 
 ---
 
-## Beheer
+## 🤖 AI Onderhoudsintervallen instellen
 
+De AI-functie gebruikt Claude Haiku met web search om officiële onderhoudsintervallen op te zoeken.
+
+**Stap 1** — API key aanmaken op [console.anthropic.com](https://console.anthropic.com)
+- Gratis tegoed van $5 bij registratie
+- Claude Haiku kost ~$0.001 per zoekopdracht (centen per maand)
+
+**Stap 2** — Key instellen in de container:
 ```bash
-pct enter 118                                              # shell in container
-pct exec 118 -- systemctl status garagebook               # service status
-pct exec 118 -- journalctl -u garagebook -f               # live logs
-pct exec 118 -- systemctl restart garagebook              # herstarten
-pct exec 118 -- garagebook-backup                         # handmatige backup
-pct exec 118 -- ls -lh /var/backups/garagebook/           # backups bekijken
+pct enter 118
+echo 'ANTHROPIC_API_KEY=sk-ant-...' >> /etc/garagebook.env
+systemctl restart garagebook
 ```
 
-## Paden in de container
+**Stap 3** — Gebruik:
+- **Bij nieuwe motor**: "Volgende — AI herinneringen →" in de tweede stap
+- **Bij bestaande motor**: Herinneringen tab → "🤖 AI intervallen importeren"
+
+> Zonder API key werkt de knop ook — dan worden generieke motorfiets-intervallen gebruikt als fallback.
+
+---
+
+## 🔧 Beheer
+
+```bash
+pct enter 118                                    # Shell in container
+pct exec 118 -- systemctl status garagebook      # Service status
+pct exec 118 -- journalctl -u garagebook -f      # Live logs
+pct exec 118 -- systemctl restart garagebook     # Herstarten
+pct exec 118 -- garagebook-backup               # Handmatige backup
+pct exec 118 -- ls -lh /var/backups/garagebook/ # Backups bekijken
+pct exec 118 -- cat /etc/garagebook.env         # Instellingen bekijken
+```
+
+### Paden in de container
 
 | Pad | Inhoud |
 |---|---|
 | `/opt/garagebook/` | Applicatiebestanden |
 | `/var/lib/garagebook/garagebook.db` | SQLite database |
 | `/var/lib/garagebook/uploads/` | Geüploade foto's |
-| `/etc/garagebook.env` | JWT secret en poort |
-| `/var/backups/garagebook/` | Dagelijkse backups |
+| `/etc/garagebook.env` | JWT secret, poort, API keys |
+| `/var/backups/garagebook/` | Dagelijkse backups (14 dagen) |
+
+---
+
+## 🗺️ API Overzicht
+
+<details>
+<summary>Alle endpoints uitklappen</summary>
+
+| Method | Route | Auth | Beschrijving |
+|---|---|---|---|
+| POST | `/api/auth/register` | — | Account aanmaken |
+| POST | `/api/auth/login` | — | Inloggen |
+| GET | `/api/auth/me` | ✓ | Huidige gebruiker |
+| GET | `/api/bikes` | ✓ | Alle motoren |
+| POST | `/api/bikes` | ✓ | Motor toevoegen |
+| PUT | `/api/bikes/:id` | ✓ | Motor aanpassen |
+| DELETE | `/api/bikes/:id` | ✓ | Motor verwijderen |
+| POST | `/api/bikes/:id/share` | ✓ | Deellink aanmaken |
+| DELETE | `/api/bikes/:id/share` | ✓ | Deellink verwijderen |
+| GET | `/api/share/:token` | — | Publieke read-only data |
+| GET | `/api/bikes/:id/logboek` | ✓ | Logboek ophalen |
+| POST | `/api/bikes/:id/logboek` | ✓ | Item toevoegen |
+| PUT | `/api/bikes/:id/logboek/:id` | ✓ | Item aanpassen |
+| DELETE | `/api/bikes/:id/logboek/:id` | ✓ | Item verwijderen |
+| GET | `/api/bikes/:id/upgrades` | ✓ | Upgrades ophalen |
+| POST | `/api/bikes/:id/upgrades` | ✓ | Upgrade toevoegen |
+| PUT | `/api/bikes/:id/upgrades/:id` | ✓ | Upgrade aanpassen |
+| DELETE | `/api/bikes/:id/upgrades/:id` | ✓ | Upgrade verwijderen |
+| GET | `/api/bikes/:id/herinneringen` | ✓ | Herinneringen ophalen |
+| POST | `/api/bikes/:id/herinneringen` | ✓ | Herinnering toevoegen |
+| PUT | `/api/bikes/:id/herinneringen/:id` | ✓ | Herinnering aanpassen |
+| DELETE | `/api/bikes/:id/herinneringen/:id` | ✓ | Herinnering verwijderen |
+| POST | `/api/ai/onderhoudsintervallen` | ✓ | AI intervallen opzoeken |
+| POST | `/api/upload` | ✓ | Foto uploaden |
+| GET | `/api/version` | — | Versienummer |
+
+</details>
+
+---
+
+## 💡 Ideeën voor toekomstige uitbreidingen
+
+### Praktisch & nuttig
+- **📊 Brandstofverbruik** — tankbeurten bijhouden met liters, prijs en verbruik per 100 km
+- **🔎 Zoekfunctie** — zoeken door logboek en upgrades op trefwoord
+- **📅 Kalenderweergave** — onderhoud en herinneringen op een kalender
+- **🏷️ Tags / labels** — eigen labels toevoegen aan items voor betere filtering
+- **📎 Documenten** — PDF bijlagen toevoegen (facturen, garantiebewijzen, APK-rapporten)
+
+### Meerdere gebruikers
+- **👥 Motor delen met schrijftoegang** — een monteur of mederijder toegang geven
+- **🏢 Garagebeheer** — meerdere klanten en motoren voor een werkplaats
+- **💬 Notities per item** — opmerkingen toevoegen per logboekregel
+
+### Integraties
+- **📧 E-mailmeldingen** — herinnering per e-mail als grens bijna bereikt is
+- **📲 Push notificaties** — via PWA of Telegram bot
+- **🗺️ Ritten bijhouden** — routes en afstanden loggen via GPS
+- **🔌 OBD2 koppeling** — automatisch km-stand uitlezen via Bluetooth OBD2 dongle
+- **📦 Onderdelenlijst** — voorraad van reserveonderdelen bijhouden
+
+### Waardebepaling
+- **💰 Aankoopwaarde vs. investeringen** — wat heeft de motor gekost, wat heb je erin gestopt
+- **📈 Waarderapport** — exporteerbaar overzicht voor verkoop of verzekering
+- **🏆 Kilometerhistorie** — grafiek van km-stand over tijd
+
+---
+
+## 📁 Projectstructuur
+
+```
+garagebook/
+├── backend/
+│   ├── server.js           # Express API — alle endpoints
+│   └── package.json
+├── frontend/
+│   ├── index.html          # Volledige SPA — HTML + CSS + JS
+│   └── manifest.json       # PWA configuratie
+├── .github/
+│   └── workflows/
+│       └── deploy.yml      # Automatische deploy bij git push
+├── install-garagebook.sh   # Eerste installatie op Proxmox
+├── update-from-github.sh   # Updaten vanuit GitHub
+├── update-garagebook.sh    # Lokale update
+├── .gitignore
+└── README.md
+```
+
+---
+
+## 📋 Versiehistorie
+
+| Versie | Wat |
+|---|---|
+| **v2.3.1** | AI intervallen importeren voor bestaande motoren |
+| **v2.3.0** | AI onderhoudsintervallen bij motor toevoegen (Claude + web search) |
+| **v2.2.0** | Herinneringen, statistieken, deellink, PDF, donkere modus, PWA, sorteren |
+| **v2.1.0** | Versienummer in topbar en paginatitel |
+| **v2.0.0** | Foto upload, aanpassen knop, notitiesveld, kaartdesign |
+| **v1.0.0** | Eerste versie — auth, multi-motor, logboek, upgrades, kostenanalyse |
+
+---
+
+*Gebouwd met ❤️ voor motorrijders die grip willen houden op hun machine.*

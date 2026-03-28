@@ -1,0 +1,65 @@
+name: Deploy naar server
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:  # handmatig triggeren vanuit GitHub UI
+
+jobs:
+  deploy:
+    name: Deploy GarageBook
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Code ophalen
+        uses: actions/checkout@v4
+
+      - name: Deployen via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script: |
+            set -e
+
+            CT_ID="${{ secrets.CT_ID }}"
+            REPO_DIR="/root/garagebook-repo"
+
+            echo "→ Repository bijwerken..."
+            if [ -d "$REPO_DIR/.git" ]; then
+              cd "$REPO_DIR" && git pull origin main
+            else
+              git clone https://github.com/${{ github.repository }}.git "$REPO_DIR"
+            fi
+
+            echo "→ Backup aanmaken..."
+            pct exec "$CT_ID" -- bash -c "
+              [ -x /usr/local/bin/garagebook-backup ] && garagebook-backup || true
+            "
+
+            echo "→ Frontend bijwerken..."
+            pct push "$CT_ID" "$REPO_DIR/frontend/index.html" /opt/garagebook/frontend/index.html
+
+            echo "→ Backend bijwerken..."
+            pct push "$CT_ID" "$REPO_DIR/backend/server.js" /opt/garagebook/backend/server.js
+            pct push "$CT_ID" "$REPO_DIR/backend/package.json" /opt/garagebook/backend/package.json
+
+            echo "→ Dependencies installeren..."
+            pct exec "$CT_ID" -- bash -c "
+              cd /opt/garagebook/backend && npm install --production --silent
+            "
+
+            echo "→ Service herstarten..."
+            pct exec "$CT_ID" -- systemctl restart garagebook
+            sleep 3
+
+            STATUS=$(pct exec "$CT_ID" -- systemctl is-active garagebook 2>/dev/null || echo "unknown")
+            if [ "$STATUS" = "active" ]; then
+              echo "✓ GarageBook succesvol gedeployed!"
+            else
+              echo "✗ Service niet actief na deploy (status: $STATUS)"
+              pct exec "$CT_ID" -- journalctl -u garagebook -n 20 --no-pager
+              exit 1
+            fi

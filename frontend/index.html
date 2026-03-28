@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GarageBook</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f8fa;--surface:white;--surface2:#f0f2f5;
+  --ink:#111827;--ink2:#374151;--ink3:#6b7280;--ink4:#9ca3af;
+  --accent:#2563eb;--accent-h:#1d4ed8;--accent-bg:#eff6ff;
+  --red:#dc2626;--red-bg:#fef2f2;
+  --green:#16a34a;--green-bg:#f0fdf4;
+  --orange:#ea580c;--orange-bg:#fff7ed;
+  --border:#e5e7eb;--border2:#d1d5db;
+  --radius:10px;--radius-sm:6px;--radius-lg:14px;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 4px 12px rgba(0,0,0,.05);
+  --shadow-lg:0 4px 16px rgba(0,0,0,.1),0 8px 32px rgba(0,0,0,.07);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.5}
+
+/* ── AUTH ── */
+#auth-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 100%);padding:2rem}
+.auth-logo{font-size:28px;font-weight:700;color:white;letter-spacing:-0.5px;margin-bottom:4px;display:flex;align-items:center;gap:10px}
+.auth-logo-icon{width:36px;height:36px;background:rgba(255,255,255,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.auth-tagline{font-size:13px;color:rgba(255,255,255,0.55);margin-bottom:2.5rem}
+.auth-card{background:white;border-radius:16px;width:min(400px,100%);box-shadow:0 24px 64px rgba(0,0,0,0.25);overflow:hidden}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;background:#f9fafb;border-bottom:1px solid var(--border)}
+.auth-tab{padding:.85rem;text-align:center;cursor:pointer;font-weight:500;font-size:14px;color:var(--ink3);background:none;border:none;border-bottom:2px solid transparent;transition:all .15s;font-family:'Inter',sans-serif}
+.auth-tab.active{color:var(--accent);border-bottom-color:var(--accent);background:white}
+.auth-body{padding:1.5rem;display:none}
+.auth-body.show{display:block}
+.auth-field{margin-bottom:.875rem}
+.auth-field label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.auth-field input{width:100%;padding:.65rem .875rem;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;font-family:'Inter',sans-serif;color:var(--ink);background:#fafafa;outline:none;transition:all .15s}
+.auth-field input:focus{border-color:var(--accent);background:white;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.auth-error{background:var(--red-bg);border:1px solid #fecaca;border-radius:var(--radius-sm);padding:.65rem .875rem;font-size:13px;color:var(--red);margin-bottom:.875rem;display:none}
+.auth-error.show{display:block}
+.auth-submit{width:100%;padding:.75rem;background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s;margin-top:.25rem}
+.auth-submit:hover{background:var(--accent-h)}
+.auth-submit:disabled{opacity:.6;cursor:not-allowed}
+.auth-footer{text-align:center;font-size:12px;color:rgba(255,255,255,.3);margin-top:1.25rem}
+
+/* ── APP ── */
+#app-screen{display:none;min-height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{background:white;border-bottom:1px solid var(--border);height:58px;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;position:sticky;top:0;z-index:100}
+.topbar-logo{font-size:18px;font-weight:700;color:var(--ink);letter-spacing:-.3px;display:flex;align-items:center;gap:8px}
+.topbar-logo-icon{width:30px;height:30px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.topbar-right{display:flex;align-items:center;gap:.75rem}
+.topbar-user{font-size:13px;color:var(--ink3);font-weight:500}
+.topbar-btn{padding:6px 14px;border:1.5px solid var(--border2);border-radius:var(--radius-sm);background:none;color:var(--ink3);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;transition:all .15s}
+.topbar-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:250px 1fr;min-height:calc(100vh - 58px)}
+
+/* ── SIDEBAR ── */
+.sidebar{background:white;border-right:1px solid var(--border);padding:1.25rem 0;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto;display:flex;flex-direction:column}
+.sidebar-section-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);padding:.75rem 1.25rem .4rem;margin-top:.5rem}
+.bike-list{padding:0 .75rem;display:flex;flex-direction:column;gap:3px}
+.bike-item{display:flex;align-items:center;gap:10px;padding:.6rem .75rem;border-radius:var(--radius-sm);cursor:pointer;transition:all .15s;position:relative;border:1.5px solid transparent}
+.bike-item:hover{background:var(--bg)}
+.bike-item.active{background:var(--accent-bg);border-color:#bfdbfe}
+.bike-icon{font-size:22px;flex-shrink:0;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--bg);border-radius:8px}
+.bike-item.active .bike-icon{background:#dbeafe}
+.bike-info{flex:1;min-width:0}
+.bike-name{font-weight:600;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bike-item.active .bike-name{color:var(--accent)}
+.bike-sub{font-size:11px;color:var(--ink4);margin-top:1px}
+.bike-km-pill{font-size:10px;font-weight:600;background:var(--accent);color:white;padding:2px 7px;border-radius:20px;flex-shrink:0;white-space:nowrap}
+.bike-del{position:absolute;top:4px;right:4px;width:18px;height:18px;display:none;align-items:center;justify-content:center;border-radius:4px;background:#fee2e2;border:none;color:var(--red);font-size:11px;cursor:pointer}
+.bike-item:hover .bike-del{display:flex}
+.sidebar-add-bike{display:flex;align-items:center;gap:8px;width:calc(100% - 1.5rem);margin:.5rem .75rem 0;padding:.6rem .75rem;border:1.5px dashed var(--border2);border-radius:var(--radius-sm);background:none;color:var(--ink4);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:500;transition:all .15s;text-align:left}
+.sidebar-add-bike:hover{border-color:var(--accent);color:var(--accent)}
+
+.nav{padding:.75rem .75rem 0;border-top:1px solid var(--border);margin-top:.75rem;display:flex;flex-direction:column;gap:2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:.6rem .75rem;border-radius:var(--radius-sm);cursor:pointer;color:var(--ink3);font-size:13px;font-weight:500;transition:all .15s;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif}
+.nav-item:hover{background:var(--bg);color:var(--ink)}
+.nav-item.active{background:var(--accent-bg);color:var(--accent)}
+.nav-icon{width:18px;height:18px;flex-shrink:0;opacity:.7}
+.nav-item.active .nav-icon{opacity:1}
+
+/* ── MAIN ── */
+.main{padding:2rem;overflow-y:auto;min-width:0}
+
+/* ── NO BIKE ── */
+#no-bike{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;gap:.75rem}
+.no-bike-icon{font-size:56px;margin-bottom:.5rem}
+.no-bike-title{font-size:22px;font-weight:700;color:var(--ink)}
+.no-bike-sub{color:var(--ink3);font-size:14px}
+
+/* ── PAGE HEADER ── */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:1rem}
+.page-title{font-size:22px;font-weight:700;color:var(--ink);letter-spacing:-.3px}
+.page-sub{font-size:13px;color:var(--ink3);margin-top:3px}
+
+/* ── TABS / CONTENT ── */
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* ── STATS ROW ── */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.875rem;margin-bottom:1.75rem}
+.stat-card{background:white;border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.125rem;box-shadow:var(--shadow)}
+.stat-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--ink4);margin-bottom:.375rem}
+.stat-value{font-size:24px;font-weight:700;color:var(--ink);letter-spacing:-.5px;line-height:1}
+.stat-delta{font-size:12px;color:var(--ink4);margin-top:.25rem}
+.stat-card.blue .stat-value{color:var(--accent)}
+.stat-card.green .stat-value{color:var(--green)}
+.stat-card.orange .stat-value{color:var(--orange)}
+
+/* ── SECTION ── */
+.section{background:white;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:1.25rem;box-shadow:var(--shadow)}
+.section-head{display:flex;align-items:center;justify-content:space-between;padding:.875rem 1.125rem;border-bottom:1px solid var(--border)}
+.section-title{font-size:15px;font-weight:600;color:var(--ink)}
+
+/* ── KAARTEN LIJST ── */
+.card-list{display:flex;flex-direction:column}
+
+.entry-card{display:flex;align-items:flex-start;gap:1rem;padding:1rem 1.125rem;border-bottom:1px solid var(--border);transition:background .1s;position:relative}
+.entry-card:last-child{border-bottom:none}
+.entry-card:hover{background:#fafafa}
+
+.entry-foto{width:72px;height:72px;border-radius:8px;object-fit:cover;flex-shrink:0;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:24px;overflow:hidden}
+.entry-foto img{width:100%;height:100%;object-fit:cover}
+.entry-foto.empty{color:var(--ink4)}
+
+.entry-body{flex:1;min-width:0}
+.entry-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.entry-desc{font-size:13px;color:var(--ink3);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:5px}
+.entry-meta{display:flex;align-items:center;gap:.625rem;flex-wrap:wrap}
+.entry-date{font-size:12px;color:var(--ink4)}
+.entry-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-onderhoud{background:#dcfce7;color:#15803d}
+.badge-reparatie{background:#fee2e2;color:#b91c1c}
+.badge-inspectie{background:#fef9c3;color:#854d0e}
+.badge-vloeistof{background:#ede9fe;color:#6d28d9}
+.entry-kosten{font-size:12px;font-weight:600;color:var(--green)}
+.entry-km{font-size:12px;color:var(--ink4)}
+
+.entry-actions{display:flex;align-items:center;gap:.5rem;flex-shrink:0;margin-left:auto}
+.btn-edit{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s;white-space:nowrap}
+.btn-edit:hover{background:var(--accent-h)}
+.btn-delete{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;background:white;color:var(--red);border:1.5px solid #fecaca;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;white-space:nowrap}
+.btn-delete:hover{background:var(--red-bg);border-color:#fca5a5}
+.btn-expand{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--border2);border-radius:var(--radius-sm);background:none;cursor:pointer;color:var(--ink4);transition:all .15s;flex-shrink:0;font-size:16px}
+.btn-expand:hover{border-color:var(--ink3);color:var(--ink2)}
+.btn-expand.open{transform:rotate(180deg)}
+
+.entry-expanded{padding:.875rem 1.125rem .875rem calc(72px + 2.125rem);background:#fafbfc;border-top:1px solid var(--border);display:none}
+.entry-expanded.show{display:block}
+.entry-expanded p{font-size:13px;color:var(--ink2);line-height:1.6}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:.55rem 1rem;border-radius:var(--radius-sm);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;border:1.5px solid var(--border2);background:white;color:var(--ink2);font-family:'Inter',sans-serif}
+.btn:hover{background:var(--bg)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:white}
+.btn-primary:hover{background:var(--accent-h);border-color:var(--accent-h)}
+.btn-sm{padding:.4rem .75rem;font-size:12px}
+
+/* ── FILTERS ── */
+.filter-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem}
+.filter-chip{padding:5px 14px;border-radius:20px;border:1.5px solid var(--border2);background:white;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s;color:var(--ink3)}
+.filter-chip:hover{border-color:var(--accent);color:var(--accent)}
+.filter-chip.active{background:var(--accent);border-color:var(--accent);color:white}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:white;border-radius:var(--radius-lg);width:min(560px,100%);max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:1.125rem 1.5rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:white;z-index:1;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.modal-title{font-size:17px;font-weight:700;color:var(--ink)}
+.modal-close{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);border:1.5px solid var(--border2);background:none;cursor:pointer;font-size:18px;color:var(--ink3);transition:all .15s;line-height:1}
+.modal-close:hover{background:var(--bg);color:var(--ink)}
+.modal-body{padding:1.5rem}
+.modal-foot{display:flex;justify-content:flex-end;gap:.75rem;padding:1rem 1.5rem;border-top:1px solid var(--border);background:#fafafa;border-radius:0 0 var(--radius-lg) var(--radius-lg);position:sticky;bottom:0}
+
+/* ── FORM ── */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.form-group{margin-bottom:1rem}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:.6rem .875rem;border:1.5px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;font-family:'Inter',sans-serif;color:var(--ink);background:#fafafa;transition:all .15s;outline:none}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent);background:white;box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.form-group textarea{resize:vertical;min-height:90px;line-height:1.5}
+
+/* ── FOTO UPLOAD IN FORM ── */
+.foto-upload-area{border:2px dashed var(--border2);border-radius:var(--radius);padding:1.5rem;text-align:center;cursor:pointer;transition:all .15s;position:relative;background:#fafafa}
+.foto-upload-area:hover{border-color:var(--accent);background:var(--accent-bg)}
+.foto-upload-area.has-foto{border-style:solid;border-color:var(--accent);padding:.5rem}
+.foto-upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.foto-upload-preview{width:100%;max-height:160px;object-fit:cover;border-radius:6px;display:none}
+.foto-upload-area.has-foto .foto-upload-preview{display:block}
+.foto-upload-placeholder{pointer-events:none}
+.foto-upload-area.has-foto .foto-upload-placeholder{display:none}
+.foto-upload-icon{font-size:28px;margin-bottom:.5rem}
+.foto-upload-text{font-size:13px;color:var(--ink3);font-weight:500}
+.foto-upload-sub{font-size:11px;color:var(--ink4);margin-top:3px}
+.foto-remove-btn{position:absolute;top:8px;right:8px;width:26px;height:26px;background:var(--red);color:white;border:none;border-radius:50%;font-size:14px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:2;line-height:1}
+.foto-upload-area.has-foto .foto-remove-btn{display:flex}
+
+/* ── ICON SELECT ── */
+.icon-select{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.icon-opt{width:42px;height:42px;border-radius:var(--radius-sm);border:1.5px solid var(--border2);background:#fafafa;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all .15s}
+.icon-opt:hover{border-color:var(--accent)}
+.icon-opt.selected{border:2px solid var(--accent);background:var(--accent-bg)}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--ink);color:white;padding:.75rem 1.25rem;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:999;opacity:0;transform:translateY(6px);transition:all .25s;pointer-events:none;max-width:320px}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.ok{background:#15803d}
+#toast.err{background:var(--red)}
+
+/* ── BAR CHART ── */
+.bar-chart{padding:1.125rem}
+.bar-row{display:flex;align-items:center;gap:.875rem;margin-bottom:.75rem}
+.bar-label{font-size:12px;color:var(--ink3);font-weight:500;width:75px;text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:18px;background:var(--bg);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.bar-fill.blue{background:var(--accent)}
+.bar-fill.green{background:var(--green)}
+.bar-fill.red{background:var(--red)}
+.bar-fill.orange{background:var(--orange)}
+.bar-val{font-size:12px;font-weight:600;color:var(--ink2);width:70px;flex-shrink:0}
+
+/* ── TIJDLIJN ── */
+.timeline{padding:1.125rem}
+.tl-item{display:flex;gap:.875rem;margin-bottom:1.125rem;position:relative}
+.tl-item:not(:last-child)::after{content:'';position:absolute;left:15px;top:32px;bottom:-1.125rem;width:1.5px;background:var(--border)}
+.tl-dot{width:32px;height:32px;border-radius:50%;background:var(--accent);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;border:2.5px solid white;box-shadow:0 0 0 1.5px var(--accent)}
+.tl-dot.green{background:var(--green);box-shadow:0 0 0 1.5px var(--green)}
+.tl-dot.red{background:var(--red);box-shadow:0 0 0 1.5px var(--red)}
+.tl-dot.purple{background:#7c3aed;box-shadow:0 0 0 1.5px #7c3aed}
+.tl-body{flex:1;padding-top:5px}
+.tl-top{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:2px}
+.tl-name{font-size:14px;font-weight:600;color:var(--ink)}
+.tl-amount{font-size:13px;color:var(--ink3);font-weight:500}
+.tl-meta{font-size:12px;color:var(--ink4)}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:3rem 1rem;color:var(--ink4)}
+.empty-icon{font-size:40px;margin-bottom:.875rem}
+.empty-title{font-size:17px;font-weight:600;color:var(--ink3)}
+.empty-sub{font-size:13px;margin-top:4px}
+
+/* ── SPINNER ── */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;border-right:none;border-bottom:1px solid var(--border)}
+  .main{padding:1rem}
+  .form-row{grid-template-columns:1fr}
+  .entry-actions{flex-direction:column;gap:.375rem}
+  .entry-card{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ AUTH ══════════════════════════════════════════════════════════════════ -->
+<div id="auth-screen">
+  <div class="auth-logo"><div class="auth-logo-icon">🏍️</div>GarageBook</div>
+  <div class="auth-tagline">Jouw digitale motorlogboek</div>
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="showAuthTab('login')">Inloggen</button>
+      <button class="auth-tab" onclick="showAuthTab('register')">Registreren</button>
+    </div>
+    <div id="auth-login" class="auth-body show">
+      <div class="auth-error" id="login-error"></div>
+      <div class="auth-field"><label>E-mailadres</label><input type="email" id="login-email" placeholder="jouw@email.nl" autocomplete="email"></div>
+      <div class="auth-field"><label>Wachtwoord</label><input type="password" id="login-pw" placeholder="••••••••" autocomplete="current-password"></div>
+      <button class="auth-submit" id="login-btn" onclick="doLogin()">Inloggen</button>
+    </div>
+    <div id="auth-register" class="auth-body">
+      <div class="auth-error" id="reg-error"></div>
+      <div class="auth-field"><label>Naam</label><input type="text" id="reg-naam" placeholder="Jouw naam"></div>
+      <div class="auth-field"><label>E-mailadres</label><input type="email" id="reg-email" placeholder="jouw@email.nl" autocomplete="email"></div>
+      <div class="auth-field"><label>Wachtwoord</label><input type="password" id="reg-pw" placeholder="Min. 6 tekens" autocomplete="new-password"></div>
+      <div class="auth-field"><label>Bevestig wachtwoord</label><input type="password" id="reg-pw2" placeholder="Herhaal wachtwoord"></div>
+      <button class="auth-submit" id="reg-btn" onclick="doRegister()">Account aanmaken</button>
+    </div>
+  </div>
+  <div class="auth-footer">GarageBook — Bouw aan de waarde van je motor</div>
+</div>
+
+<!-- ══ APP ════════════════════════════════════════════════════════════════════ -->
+<div id="app-screen">
+  <div class="topbar">
+    <div class="topbar-logo"><div class="topbar-logo-icon">🏍️</div>GarageBook</div>
+    <div class="topbar-right">
+      <div class="topbar-user" id="header-user"></div>
+      <button class="topbar-btn" onclick="doLogout()">Uitloggen</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-section-label">Mijn motoren</div>
+      <div class="bike-list" id="bike-list"></div>
+      <button class="sidebar-add-bike" onclick="openModal('add-bike')">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>
+        Motor toevoegen
+      </button>
+
+      <div class="nav">
+        <button class="nav-item active" onclick="switchTab('dashboard',this)">
+          <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="1" width="7" height="7" rx="1.5"/><rect x="10" y="1" width="7" height="7" rx="1.5"/><rect x="1" y="10" width="7" height="7" rx="1.5"/><rect x="10" y="10" width="7" height="7" rx="1.5"/></svg>
+          Dashboard
+        </button>
+        <button class="nav-item" onclick="switchTab('logboek',this)">
+          <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3h12v12H3V3zm3 3h6M6 9h6M6 12h4"/></svg>
+          Onderhoudslogboek
+        </button>
+        <button class="nav-item" onclick="switchTab('upgrades',this)">
+          <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 2l2.5 5 5 .5-3.5 3.5 1 5L9 13.5 4 16l1-5L1.5 7.5l5-.5z"/></svg>
+          Upgrades & Parts
+        </button>
+        <div class="sidebar-section-label" style="margin-top:.5rem">Analyse</div>
+        <button class="nav-item" onclick="switchTab('kosten',this)">
+          <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 14l3-5 3 3 4-6 4 6"/></svg>
+          Kostenanalyse
+        </button>
+        <button class="nav-item" onclick="switchTab('timeline',this)">
+          <svg class="nav-icon" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="4" cy="5" r="1.5"/><line x1="7" y1="5" x2="16" y2="5"/><circle cx="4" cy="9" r="1.5"/><line x1="7" y1="9" x2="16" y2="9"/><circle cx="4" cy="13" r="1.5"/><line x1="7" y1="13" x2="16" y2="13"/></svg>
+          Tijdlijn
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+      <div id="no-bike">
+        <div class="no-bike-icon">🏍️</div>
+        <div class="no-bike-title">Geen motor geselecteerd</div>
+        <div class="no-bike-sub">Voeg je eerste motor toe om te beginnen</div>
+        <button class="btn btn-primary" style="margin-top:1rem" onclick="openModal('add-bike')">+ Motor toevoegen</button>
+      </div>
+
+      <div id="tabs-wrap" style="display:none">
+
+        <!-- DASHBOARD -->
+        <div id="tab-dashboard" class="tab-content active">
+          <div class="page-header">
+            <div><div class="page-title" id="dash-title">Dashboard</div><div class="page-sub" id="dash-sub"></div></div>
+            <button class="btn btn-primary" onclick="openModal('onderhoud')">+ Onderhoud loggen</button>
+          </div>
+          <div class="stats-row">
+            <div class="stat-card blue"><div class="stat-label">Totale kosten</div><div class="stat-value" id="stat-totaal">—</div><div class="stat-delta">Alle categorieën</div></div>
+            <div class="stat-card green"><div class="stat-label">Km-stand</div><div class="stat-value" id="stat-km">—</div><div class="stat-delta">Huidig geregistreerd</div></div>
+            <div class="stat-card orange"><div class="stat-label">Upgrades</div><div class="stat-value" id="stat-upgrades">—</div><div class="stat-delta">Geïnstalleerd</div></div>
+            <div class="stat-card"><div class="stat-label">Beurten</div><div class="stat-value" id="stat-beurten">—</div><div class="stat-delta">Geregistreerd</div></div>
+          </div>
+          <div class="section">
+            <div class="section-head"><span class="section-title">Recente activiteit</span><button class="btn btn-sm" onclick="switchTab('logboek',document.querySelectorAll('.nav-item')[1])">Alles zien →</button></div>
+            <div class="card-list" id="recent-cards"></div>
+          </div>
+        </div>
+
+        <!-- LOGBOEK -->
+        <div id="tab-logboek" class="tab-content">
+          <div class="page-header">
+            <div><div class="page-title">Onderhoudslogboek</div><div class="page-sub">Alle beurten, reparaties en inspecties</div></div>
+            <button class="btn btn-primary" onclick="openModal('onderhoud')">+ Onderhoud toevoegen</button>
+          </div>
+          <div class="filter-row" id="log-filters">
+            <button class="filter-chip active" onclick="filterLog('alle',this)">Alle</button>
+            <button class="filter-chip" onclick="filterLog('onderhoud',this)">Onderhoud</button>
+            <button class="filter-chip" onclick="filterLog('reparatie',this)">Reparatie</button>
+            <button class="filter-chip" onclick="filterLog('inspectie',this)">Inspectie</button>
+            <button class="filter-chip" onclick="filterLog('vloeistof',this)">Vloeistoffen</button>
+          </div>
+          <div class="section"><div class="card-list" id="log-cards"></div></div>
+        </div>
+
+        <!-- UPGRADES -->
+        <div id="tab-upgrades" class="tab-content">
+          <div class="page-header">
+            <div><div class="page-title">Upgrades & Parts</div><div class="page-sub">Aangebrachte modificaties en onderdelen</div></div>
+            <button class="btn btn-primary" onclick="openModal('upgrade')">+ Upgrade toevoegen</button>
+          </div>
+          <div class="stats-row">
+            <div class="stat-card blue"><div class="stat-label">Geïnvesteerd</div><div class="stat-value" id="up-totaal">—</div><div class="stat-delta">Alle upgrades</div></div>
+            <div class="stat-card"><div class="stat-label">Onderdelen</div><div class="stat-value" id="up-aantal">—</div><div class="stat-delta">Geïnstalleerd</div></div>
+          </div>
+          <div class="filter-row" id="up-filters">
+            <button class="filter-chip active" onclick="filterUpgrades('alle',this)">Alle</button>
+            <button class="filter-chip" onclick="filterUpgrades('uitlaat',this)">Uitlaat</button>
+            <button class="filter-chip" onclick="filterUpgrades('remmen',this)">Remmen</button>
+            <button class="filter-chip" onclick="filterUpgrades('ophanging',this)">Ophanging</button>
+            <button class="filter-chip" onclick="filterUpgrades('styling',this)">Styling</button>
+            <button class="filter-chip" onclick="filterUpgrades('elektrisch',this)">Elektrisch</button>
+            <button class="filter-chip" onclick="filterUpgrades('motor',this)">Motor</button>
+          </div>
+          <div class="section"><div class="card-list" id="up-cards"></div></div>
+        </div>
+
+        <!-- KOSTEN -->
+        <div id="tab-kosten" class="tab-content">
+          <div class="page-header"><div><div class="page-title">Kostenanalyse</div><div class="page-sub">Overzicht van alle uitgaven</div></div></div>
+          <div class="stats-row">
+            <div class="stat-card blue"><div class="stat-label">Totaal</div><div class="stat-value" id="k-totaal">—</div></div>
+            <div class="stat-card green"><div class="stat-label">Kosten per km</div><div class="stat-value" id="k-km">—</div></div>
+          </div>
+          <div class="section"><div class="section-head"><span class="section-title">Per categorie</span></div><div class="bar-chart" id="bar-chart"></div></div>
+        </div>
+
+        <!-- TIJDLIJN -->
+        <div id="tab-timeline" class="tab-content">
+          <div class="page-header"><div><div class="page-title">Tijdlijn</div><div class="page-sub">Het complete verhaal van je machine</div></div></div>
+          <div class="section"><div class="timeline" id="timeline"></div></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODALS ═════════════════════════════════════════════════════════════════ -->
+
+<!-- Motor toevoegen -->
+<div class="modal-overlay" id="modal-add-bike">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Motor toevoegen</div><button class="modal-close" onclick="closeModal('add-bike')">×</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>Merk</label><input type="text" id="bk-merk" placeholder="Yamaha, Honda…"></div>
+        <div class="form-group"><label>Model</label><input type="text" id="bk-model" placeholder="MT-07, CB500F…"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Bouwjaar</label><input type="number" id="bk-jaar" placeholder="2021"></div>
+        <div class="form-group"><label>Km-stand</label><input type="number" id="bk-km" placeholder="0"></div>
+      </div>
+      <div class="form-group"><label>Kenteken (optioneel)</label><input type="text" id="bk-kenteken" placeholder="12-ABC-3"></div>
+      <div class="form-group"><label>Icoon</label>
+        <div class="icon-select" id="icon-select">
+          <div class="icon-opt selected" data-icon="🏍️" onclick="selIcon(this)">🏍️</div>
+          <div class="icon-opt" data-icon="🛵" onclick="selIcon(this)">🛵</div>
+          <div class="icon-opt" data-icon="⚡" onclick="selIcon(this)">⚡</div>
+          <div class="icon-opt" data-icon="🔥" onclick="selIcon(this)">🔥</div>
+          <div class="icon-opt" data-icon="🏁" onclick="selIcon(this)">🏁</div>
+          <div class="icon-opt" data-icon="💀" onclick="selIcon(this)">💀</div>
+          <div class="icon-opt" data-icon="🤘" onclick="selIcon(this)">🤘</div>
+          <div class="icon-opt" data-icon="🌍" onclick="selIcon(this)">🌍</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('add-bike')">Annuleren</button><button class="btn btn-primary" onclick="saveBike()">Toevoegen</button></div>
+  </div>
+</div>
+
+<!-- Onderhoud toevoegen/aanpassen -->
+<div class="modal-overlay" id="modal-onderhoud">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" id="om-modal-title">Onderhoud loggen</div><button class="modal-close" onclick="closeModal('onderhoud')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Foto</label>
+        <div class="foto-upload-area" id="om-foto-area">
+          <input type="file" id="om-foto-input" accept="image/*" onchange="handleFotoChange('om')">
+          <button class="foto-remove-btn" onclick="removeFoto('om',event)" type="button">×</button>
+          <img class="foto-upload-preview" id="om-foto-preview" src="" alt="">
+          <div class="foto-upload-placeholder">
+            <div class="foto-upload-icon">📷</div>
+            <div class="foto-upload-text">Klik om een foto toe te voegen</div>
+            <div class="foto-upload-sub">JPG, PNG of WEBP · max 8MB</div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group"><label>Titel / Beschrijving</label><input type="text" id="om-beschrijving" placeholder="Bijv. Olie + filter wisselen"></div>
+      <div class="form-group"><label>Notities (optioneel)</label><textarea id="om-notities" placeholder="Uitgebreide beschrijving, bevindingen, gebruikte materialen…"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Datum</label><input type="date" id="om-datum"></div>
+        <div class="form-group"><label>Type</label><select id="om-type"><option value="onderhoud">Onderhoud</option><option value="reparatie">Reparatie</option><option value="inspectie">Inspectie</option><option value="vloeistof">Vloeistoffen</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Km-stand</label><input type="number" id="om-km" placeholder="18240"></div>
+        <div class="form-group"><label>Kosten (€)</label><input type="number" id="om-kosten" placeholder="0.00" step="0.01"></div>
+      </div>
+      <div class="form-group"><label>Garage / Dealer</label><input type="text" id="om-garage" placeholder="Yamaha Rotterdam, Zelf gedaan…"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('onderhoud')">Annuleren</button><button class="btn btn-primary" id="om-save-btn" onclick="saveOnderhoud()">Opslaan</button></div>
+  </div>
+</div>
+
+<!-- Upgrade toevoegen/aanpassen -->
+<div class="modal-overlay" id="modal-upgrade">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" id="up-modal-title">Upgrade toevoegen</div><button class="modal-close" onclick="closeModal('upgrade')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>Foto</label>
+        <div class="foto-upload-area" id="up-foto-area">
+          <input type="file" id="up-foto-input" accept="image/*" onchange="handleFotoChange('up')">
+          <button class="foto-remove-btn" onclick="removeFoto('up',event)" type="button">×</button>
+          <img class="foto-upload-preview" id="up-foto-preview" src="" alt="">
+          <div class="foto-upload-placeholder">
+            <div class="foto-upload-icon">📷</div>
+            <div class="foto-upload-text">Klik om een foto toe te voegen</div>
+            <div class="foto-upload-sub">JPG, PNG of WEBP · max 8MB</div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group"><label>Naam</label><input type="text" id="up-naam" placeholder="Bijv. Akrapovič Evolution uitlaat"></div>
+      <div class="form-group"><label>Beschrijving (optioneel)</label><textarea id="up-beschrijving" placeholder="Reden aankoop, ervaringen, resultaat…"></textarea></div>
+      <div class="form-row">
+        <div class="form-group"><label>Merk</label><input type="text" id="up-merk" placeholder="Akrapovič, Brembo…"></div>
+        <div class="form-group"><label>Categorie</label><select id="up-cat"><option value="uitlaat">Uitlaat</option><option value="remmen">Remmen</option><option value="ophanging">Ophanging</option><option value="styling">Styling</option><option value="elektrisch">Elektrisch</option><option value="motor">Motor</option><option value="overig">Overig</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Kosten (€)</label><input type="number" id="up-kosten" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label>Datum</label><input type="date" id="up-datum"></div>
+      </div>
+      <div class="form-group"><label>Installateur</label><input type="text" id="up-installer" placeholder="Zelf gedaan, Garage naam…"></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('upgrade')">Annuleren</button><button class="btn btn-primary" id="up-save-btn" onclick="saveUpgrade()">Opslaan</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let TOKEN = localStorage.getItem('gb_token');
+let USER = null, bikes = [], CBid = null;
+let logData = [], upData = [];
+let logF = 'alle', upF = 'alle';
+let kmCache = {}; // bikeId -> hoogste km
+let chosenIcon = '🏍️';
+let editingLogId = null, editingUpId = null;
+let omFotoUrl = null, upFotoUrl = null; // foto URL na upload
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (TOKEN) opts.headers['Authorization'] = 'Bearer ' + TOKEN;
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch('/api' + path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Fout opgetreden.');
+  return data;
+}
+
+async function uploadFoto(file) {
+  const fd = new FormData();
+  fd.append('foto', file);
+  const opts = { method: 'POST', headers: { 'Authorization': 'Bearer ' + TOKEN }, body: fd };
+  const res = await fetch('/api/upload', opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Upload mislukt.');
+  return data.url;
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = '', 3000);
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+function showAuthTab(t) {
+  document.getElementById('auth-login').classList.toggle('show', t==='login');
+  document.getElementById('auth-register').classList.toggle('show', t==='register');
+  document.querySelectorAll('.auth-tab').forEach((el,i) => el.classList.toggle('active', i===(t==='login'?0:1)));
+}
+function showErr(id, msg) { const e=document.getElementById(id); e.textContent=msg; e.classList.add('show'); }
+function hideErr(id) { document.getElementById(id).classList.remove('show'); }
+function setBtnLoading(id, on) {
+  const b=document.getElementById(id); b.disabled=on;
+  b.innerHTML=on?'<span class="spinner"></span> Bezig...':(id==='login-btn'?'Inloggen':'Account aanmaken');
+}
+
+async function doRegister() {
+  hideErr('reg-error');
+  const naam=document.getElementById('reg-naam').value.trim();
+  const email=document.getElementById('reg-email').value.trim();
+  const pw=document.getElementById('reg-pw').value;
+  const pw2=document.getElementById('reg-pw2').value;
+  if (!naam) return showErr('reg-error','Vul je naam in.');
+  if (pw!==pw2) return showErr('reg-error','Wachtwoorden komen niet overeen.');
+  setBtnLoading('reg-btn',true);
+  try {
+    const r=await api('POST','/auth/register',{naam,email,password:pw});
+    TOKEN=r.token; USER=r.user; localStorage.setItem('gb_token',TOKEN); bootApp();
+  } catch(e) { showErr('reg-error',e.message); }
+  finally { setBtnLoading('reg-btn',false); }
+}
+
+async function doLogin() {
+  hideErr('login-error');
+  const email=document.getElementById('login-email').value.trim();
+  const pw=document.getElementById('login-pw').value;
+  setBtnLoading('login-btn',true);
+  try {
+    const r=await api('POST','/auth/login',{email,password:pw});
+    TOKEN=r.token; USER=r.user; localStorage.setItem('gb_token',TOKEN); bootApp();
+  } catch(e) { showErr('login-error',e.message); }
+  finally { setBtnLoading('login-btn',false); }
+}
+
+function doLogout() {
+  TOKEN=null; USER=null; CBid=null; bikes=[]; kmCache={};
+  localStorage.removeItem('gb_token');
+  document.getElementById('app-screen').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+  document.getElementById('login-email').value='';
+  document.getElementById('login-pw').value='';
+}
+
+async function bootApp() {
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app-screen').style.display='block';
+  try {
+    if (!USER) USER=await api('GET','/auth/me');
+    document.getElementById('header-user').textContent=USER.naam;
+    bikes=await api('GET','/bikes');
+    renderBikeList();
+    bikes.length ? selectBike(bikes[0].id) : showNoBike();
+  } catch { doLogout(); }
+}
+
+// ── BIKES ─────────────────────────────────────────────────────────────────────
+function renderBikeList() {
+  document.getElementById('bike-list').innerHTML = bikes.map(b => `
+    <div class="bike-item${b.id===CBid?' active':''}" onclick="selectBike('${b.id}')">
+      <div class="bike-icon">${b.icon}</div>
+      <div class="bike-info">
+        <div class="bike-name">${b.merk} ${b.model}</div>
+        <div class="bike-sub">${b.jaar}${b.kenteken?' · '+b.kenteken:''}</div>
+      </div>
+      <div class="bike-km-pill">${bikeKm(b)} km</div>
+      <button class="bike-del" onclick="delBike(event,'${b.id}')">×</button>
+    </div>`).join('');
+}
+
+function bikeKm(b) {
+  const cached = kmCache[b.id];
+  return (cached != null ? cached : b.km).toLocaleString('nl-NL');
+}
+
+async function selectBike(id) {
+  CBid=id; renderBikeList(); showTabs();
+  switchTab('dashboard', document.querySelector('.nav-item'));
+  await loadBikeData();
+}
+
+async function loadBikeData() {
+  if (!CBid) return;
+  [logData, upData] = await Promise.all([
+    api('GET',`/bikes/${CBid}/logboek`),
+    api('GET',`/bikes/${CBid}/upgrades`)
+  ]);
+  // Km-stand cache bijwerken voor deze motor
+  const kmVals = logData.filter(i=>i.km>0).map(i=>i.km);
+  if (kmVals.length) kmCache[CBid] = Math.max(...kmVals);
+  render();
+}
+
+function showNoBike() { document.getElementById('no-bike').style.display='flex'; document.getElementById('tabs-wrap').style.display='none'; }
+function showTabs() { document.getElementById('no-bike').style.display='none'; document.getElementById('tabs-wrap').style.display='block'; }
+
+function selIcon(el) {
+  document.querySelectorAll('.icon-opt').forEach(e=>e.classList.remove('selected'));
+  el.classList.add('selected'); chosenIcon=el.dataset.icon;
+}
+
+async function saveBike() {
+  const merk=document.getElementById('bk-merk').value.trim();
+  const model=document.getElementById('bk-model').value.trim();
+  if (!merk||!model) return toast('Vul merk en model in.','err');
+  try {
+    const b=await api('POST','/bikes',{merk,model,jaar:document.getElementById('bk-jaar').value,km:parseInt(document.getElementById('bk-km').value)||0,kenteken:document.getElementById('bk-kenteken').value.trim(),icon:chosenIcon});
+    bikes.push(b);
+    ['bk-merk','bk-model','bk-jaar','bk-km','bk-kenteken'].forEach(id=>document.getElementById(id).value='');
+    closeModal('add-bike'); selectBike(b.id); toast('Motor toegevoegd!');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+async function delBike(e,id) {
+  e.stopPropagation();
+  if (!confirm('Motor en alle data verwijderen?')) return;
+  try {
+    await api('DELETE',`/bikes/${id}`);
+    bikes=bikes.filter(b=>b.id!==id);
+    if (CBid===id) { CBid=null; bikes.length?selectBike(bikes[0].id):showNoBike(); }
+    renderBikeList(); toast('Motor verwijderd.');
+  } catch(e) { toast(e.message,'err'); }
+}
+
+// ── FOTO UPLOAD ───────────────────────────────────────────────────────────────
+function handleFotoChange(prefix) {
+  const file = document.getElementById(prefix+'-foto-input').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById(prefix+'-foto-preview').src = e.target.result;
+    document.getElementById(prefix+'-foto-area').classList.add('has-foto');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeFoto(prefix, e) {
+  e.preventDefault(); e.stopPropagation();
+  document.getElementById(prefix+'-foto-input').value='';
+  document.getElementById(prefix+'-foto-preview').src='';
+  document.getElementById(prefix+'-foto-area').classList.remove('has-foto');
+  if (prefix==='om') omFotoUrl=null;
+  else upFotoUrl=null;
+}
+
+async function doUploadFoto(prefix) {
+  const file = document.getElementById(prefix+'-foto-input').files[0];
+  if (!file) return prefix==='om' ? omFotoUrl : upFotoUrl;
+  try { return await uploadFoto(file); }
+  catch(e) { toast('Foto upload mislukt: '+e.message,'err'); return null; }
+}
+
+function setFotoPreview(prefix, url) {
+  if (url) {
+    document.getElementById(prefix+'-foto-preview').src = url;
+    document.getElementById(prefix+'-foto-area').classList.add('has-foto');
+  } else {
+    document.getElementById(prefix+'-foto-preview').src = '';
+    document.getElementById(prefix+'-foto-area').classList.remove('has-foto');
+  }
+}
+
+// ── TABS / FILTERS ────────────────────────────────────────────────────────────
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  if (el) el.classList.add('active');
+}
+function filterLog(f,el) { logF=f; document.querySelectorAll('#log-filters .filter-chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); renderLog(); }
+function filterUpgrades(f,el) { upF=f; document.querySelectorAll('#up-filters .filter-chip').forEach(c=>c.classList.remove('active')); el.classList.add('active'); renderUpgrades(); }
+
+// ── MODALS ────────────────────────────────────────────────────────────────────
+function openModal(t, data=null) {
+  if (t==='onderhoud') {
+    editingLogId = data ? data.id : null;
+    document.getElementById('om-modal-title').textContent = data ? 'Onderhoud aanpassen' : 'Onderhoud loggen';
+    document.getElementById('om-datum').value = data?.datum || new Date().toISOString().slice(0,10);
+    document.getElementById('om-type').value = data?.type || 'onderhoud';
+    document.getElementById('om-beschrijving').value = data?.beschrijving || '';
+    document.getElementById('om-notities').value = data?.notities || '';
+    document.getElementById('om-km').value = data?.km || '';
+    document.getElementById('om-kosten').value = data?.kosten || '';
+    document.getElementById('om-garage').value = data?.garage || '';
+    omFotoUrl = data?.foto || null;
+    setFotoPreview('om', omFotoUrl);
+    document.getElementById('om-foto-input').value='';
+  }
+  if (t==='upgrade') {
+    editingUpId = data ? data.id : null;
+    document.getElementById('up-modal-title').textContent = data ? 'Upgrade aanpassen' : 'Upgrade toevoegen';
+    document.getElementById('up-naam').value = data?.naam || '';
+    document.getElementById('up-beschrijving').value = data?.beschrijving || '';
+    document.getElementById('up-merk').value = data?.merk || '';
+    document.getElementById('up-cat').value = data?.cat || 'uitlaat';
+    document.getElementById('up-kosten').value = data?.kosten || '';
+    document.getElementById('up-datum').value = data?.datum || new Date().toISOString().slice(0,10);
+    document.getElementById('up-installer').value = data?.installer || '';
+    upFotoUrl = data?.foto || null;
+    setFotoPreview('up', upFotoUrl);
+    document.getElementById('up-foto-input').value='';
+  }
+  document.getElementById('modal-'+t).classList.add('open');
+}
+
+function closeModal(t) {
+  document.getElementById('modal-'+t).classList.remove('open');
+  if (t==='onderhoud') { editingLogId=null; omFotoUrl=null; }
+  if (t==='upgrade') { editingUpId=null; upFotoUrl=null; }
+}
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); }));
+
+// ── SAVE ONDERHOUD ────────────────────────────────────────────────────────────
+async function saveOnderhoud() {
+  const btn = document.getElementById('om-save-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Opslaan…';
+  try {
+    const fotoUrl = await doUploadFoto('om');
+    const body = {
+      datum: document.getElementById('om-datum').value,
+      type: document.getElementById('om-type').value,
+      beschrijving: document.getElementById('om-beschrijving').value || 'Onderhoud',
+      notities: document.getElementById('om-notities').value,
+      km: parseInt(document.getElementById('om-km').value)||0,
+      kosten: parseFloat(document.getElementById('om-kosten').value)||0,
+      garage: document.getElementById('om-garage').value,
+      foto: fotoUrl !== null ? fotoUrl : omFotoUrl
+    };
+    if (editingLogId) {
+      const updated = await api('PUT',`/bikes/${CBid}/logboek/${editingLogId}`, body);
+      logData = logData.map(i=>i.id===editingLogId?updated:i);
+    } else {
+      const created = await api('POST',`/bikes/${CBid}/logboek`, body);
+      logData.unshift(created);
+    }
+    closeModal('onderhoud'); render(); toast(editingLogId?'Bijgewerkt!':'Opgeslagen!');
+  } catch(e) { toast(e.message,'err'); }
+  finally { btn.disabled=false; btn.textContent='Opslaan'; }
+}
+
+// ── SAVE UPGRADE ──────────────────────────────────────────────────────────────
+async function saveUpgrade() {
+  const btn = document.getElementById('up-save-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Opslaan…';
+  try {
+    const fotoUrl = await doUploadFoto('up');
+    const body = {
+      naam: document.getElementById('up-naam').value||'Upgrade',
+      beschrijving: document.getElementById('up-beschrijving').value,
+      merk: document.getElementById('up-merk').value,
+      cat: document.getElementById('up-cat').value,
+      kosten: parseFloat(document.getElementById('up-kosten').value)||0,
+      datum: document.getElementById('up-datum').value,
+      installer: document.getElementById('up-installer').value,
+      foto: fotoUrl !== null ? fotoUrl : upFotoUrl
+    };
+    if (editingUpId) {
+      const updated = await api('PUT',`/bikes/${CBid}/upgrades/${editingUpId}`, body);
+      upData = upData.map(u=>u.id===editingUpId?updated:u);
+    } else {
+      const created = await api('POST',`/bikes/${CBid}/upgrades`, body);
+      upData.unshift(created);
+    }
+    closeModal('upgrade'); render(); toast(editingUpId?'Bijgewerkt!':'Upgrade opgeslagen!');
+  } catch(e) { toast(e.message,'err'); }
+  finally { btn.disabled=false; btn.textContent='Opslaan'; }
+}
+
+async function delLog(id) {
+  if (!confirm('Dit item verwijderen?')) return;
+  try { await api('DELETE',`/bikes/${CBid}/logboek/${id}`); logData=logData.filter(i=>i.id!==id); render(); toast('Verwijderd.'); }
+  catch(e) { toast(e.message,'err'); }
+}
+async function delUp(id) {
+  if (!confirm('Dit item verwijderen?')) return;
+  try { await api('DELETE',`/bikes/${CBid}/upgrades/${id}`); upData=upData.filter(u=>u.id!==id); render(); toast('Verwijderd.'); }
+  catch(e) { toast(e.message,'err'); }
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+const BADGE_LABELS = { onderhoud:'Onderhoud', reparatie:'Reparatie', inspectie:'Inspectie', vloeistof:'Vloeistof' };
+const TLC = { onderhoud:'', reparatie:'red', inspectie:'green', vloeistof:'purple', upgrade:'blue' };
+const TLI = { onderhoud:'🔧', reparatie:'🔩', inspectie:'✅', vloeistof:'🛢️', upgrade:'⭐' };
+
+function fmt(n) { return '€'+Number(n).toLocaleString('nl-NL',{minimumFractionDigits:0}); }
+function fmtD(d) { if(!d) return '—'; const dt=new Date(d); return isNaN(dt)?d:dt.toLocaleDateString('nl-NL',{day:'numeric',month:'short',year:'numeric'}); }
+
+function entryCardHTML(item, type) {
+  const isLog = type === 'log';
+  const foto = item.foto
+    ? `<div class="entry-foto"><img src="${item.foto}" alt="" loading="lazy"></div>`
+    : `<div class="entry-foto empty">📷</div>`;
+
+  const badge = isLog
+    ? `<span class="entry-badge badge-${item.type}">${BADGE_LABELS[item.type]||item.type}</span>`
+    : `<span class="entry-badge" style="background:#eff6ff;color:#1d4ed8">${(item.cat||'overig').charAt(0).toUpperCase()+(item.cat||'overig').slice(1)}</span>`;
+
+  const kosten = item.kosten ? `<span class="entry-kosten">${fmt(item.kosten)}</span>` : '';
+  const km = (isLog && item.km) ? `<span class="entry-km">${item.km.toLocaleString('nl-NL')} km</span>` : '';
+  const desc = item.beschrijving || item.naam || '';
+  const notities = isLog ? (item.notities||'') : (item.beschrijving||'');
+
+  const editFn = isLog ? `openModal('onderhoud', logData.find(x=>x.id==='${item.id}'))` : `openModal('upgrade', upData.find(x=>x.id==='${item.id}'))`;
+  const delFn  = isLog ? `delLog('${item.id}')` : `delUp('${item.id}')`;
+
+  return `
+    <div class="entry-card">
+      ${foto}
+      <div class="entry-body">
+        <div class="entry-title">${desc}</div>
+        ${notities ? `<div class="entry-desc">${notities}</div>` : ''}
+        <div class="entry-meta">
+          <span class="entry-date">${fmtD(item.datum)}</span>
+          ${badge}
+          ${kosten}
+          ${km}
+        </div>
+      </div>
+      <div class="entry-actions">
+        <button class="btn-edit" onclick="${editFn}">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 1.5l1.5 1.5-7 7L2 10l.5-1.5z"/></svg>
+          Aanpassen
+        </button>
+        <button class="btn-delete" onclick="${delFn}">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2 3h8M5 3V2h2v1M4 3l.5 7h3L8 3"/></svg>
+          Verwijder
+        </button>
+      </div>
+    </div>`;
+}
+
+function emptyHTML(icon, title, sub) {
+  return `<div class="empty"><div class="empty-icon">${icon}</div><div class="empty-title">${title}</div><div class="empty-sub">${sub}</div></div>`;
+}
+
+function render() {
+  if (!CBid) return;
+  const bike = bikes.find(b=>b.id===CBid);
+  const totaal = logData.reduce((s,i)=>s+i.kosten,0)+upData.reduce((s,u)=>s+u.kosten,0);
+  const kmVals = logData.filter(i=>i.km>0).map(i=>i.km);
+  const maxKm = kmVals.length ? Math.max(...kmVals) : (bike?bike.km:0);
+
+  document.getElementById('stat-totaal').textContent = fmt(totaal);
+  document.getElementById('stat-km').textContent = maxKm.toLocaleString('nl-NL');
+  document.getElementById('stat-upgrades').textContent = upData.length;
+  document.getElementById('stat-beurten').textContent = logData.length;
+  document.getElementById('up-totaal').textContent = fmt(upData.reduce((s,u)=>s+u.kosten,0));
+  document.getElementById('up-aantal').textContent = upData.length;
+  document.getElementById('k-totaal').textContent = fmt(totaal);
+  document.getElementById('k-km').textContent = maxKm>0?'€'+(totaal/maxKm).toFixed(2).replace('.',','):'—';
+  if (bike) {
+    document.getElementById('dash-title').textContent = bike.merk+' '+bike.model;
+    document.getElementById('dash-sub').textContent = bike.jaar+(bike.kenteken?' · '+bike.kenteken:'')+' · '+maxKm.toLocaleString('nl-NL')+' km';
+  }
+
+  // recent (dashboard)
+  const rec = logData.slice(0,5);
+  document.getElementById('recent-cards').innerHTML = rec.length
+    ? rec.map(i=>entryCardHTML(i,'log')).join('')
+    : emptyHTML('📋','Nog geen activiteit','Log je eerste onderhoudsbeurt');
+
+  renderLog(); renderUpgrades(); renderTimeline(); renderBarChart();
+  renderBikeList();
+}
+
+function renderLog() {
+  const filtered = logF==='alle' ? logData : logData.filter(i=>i.type===logF);
+  document.getElementById('log-cards').innerHTML = filtered.length
+    ? filtered.map(i=>entryCardHTML(i,'log')).join('')
+    : emptyHTML('📋','Geen beurten gevonden','Voeg een onderhoudsbeurt toe');
+}
+
+function renderUpgrades() {
+  const filtered = upF==='alle' ? upData : upData.filter(u=>u.cat===upF);
+  document.getElementById('up-cards').innerHTML = filtered.length
+    ? filtered.map(u=>entryCardHTML(u,'up')).join('')
+    : emptyHTML('⭐','Geen upgrades gevonden','Voeg een upgrade toe');
+}
+
+function renderTimeline() {
+  const all = [
+    ...logData.map(i=>({...i,_type:'log'})),
+    ...upData.map(u=>({...u,_type:'up',type:'upgrade',beschrijving:u.naam}))
+  ].sort((a,b)=>new Date(b.datum)-new Date(a.datum));
+  document.getElementById('timeline').innerHTML = all.length
+    ? all.map(i=>`
+      <div class="tl-item">
+        <div class="tl-dot ${TLC[i.type]||''}">${TLI[i.type]||'🔧'}</div>
+        <div class="tl-body">
+          <div class="tl-top">
+            <div class="tl-name">${i.beschrijving}</div>
+            <div class="tl-amount">${i.kosten?fmt(i.kosten):'—'}</div>
+          </div>
+          <div class="tl-meta">${fmtD(i.datum)}${i.km?' · '+i.km.toLocaleString('nl-NL')+' km':''}${i.garage?' · '+i.garage:''}</div>
+        </div>
+      </div>`).join('')
+    : emptyHTML('⏱️','Tijdlijn is leeg','Voeg onderhoud of upgrades toe');
+}
+
+function renderBarChart() {
+  const cats = [
+    {label:'Upgrades',val:upData.reduce((s,u)=>s+u.kosten,0),cls:'blue'},
+    {label:'Onderhoud',val:logData.filter(i=>i.type==='onderhoud'||i.type==='vloeistof').reduce((s,i)=>s+i.kosten,0),cls:'green'},
+    {label:'Reparatie',val:logData.filter(i=>i.type==='reparatie').reduce((s,i)=>s+i.kosten,0),cls:'red'},
+    {label:'Inspectie',val:logData.filter(i=>i.type==='inspectie').reduce((s,i)=>s+i.kosten,0),cls:'orange'},
+  ];
+  const max = Math.max(...cats.map(c=>c.val),1);
+  document.getElementById('bar-chart').innerHTML = cats.map(c=>`
+    <div class="bar-row">
+      <div class="bar-label">${c.label}</div>
+      <div class="bar-track"><div class="bar-fill ${c.cls}" style="width:${Math.round(c.val/max*100)}%"></div></div>
+      <div class="bar-val">${fmt(c.val)}</div>
+    </div>`).join('');
+}
+
+// ── KEYBOARD ──────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));
+  if (e.key==='Enter' && !e.shiftKey) {
+    if (document.getElementById('auth-login').classList.contains('show')) doLogin();
+    else if (document.getElementById('auth-register').classList.contains('show')) doRegister();
+  }
+});
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+(async () => {
+  if (TOKEN) { try { await bootApp(); } catch { doLogout(); } }
+  else document.getElementById('auth-screen').style.display='flex';
+})();
+</script>
+</body>
+</html>

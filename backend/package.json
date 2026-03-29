@@ -1,6 +1,6 @@
 {
   "name": "garagebook-backend",
-  "version": "2.5.0",
+  "version": "2.5.1",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

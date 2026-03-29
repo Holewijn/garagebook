@@ -851,7 +851,6 @@ let logData = [], upData = [], herData = [];
 let logF = 'alle', upF = 'alle';
 let logSort = { key:'datum', dir:'desc' };
 let upSort  = { key:'datum', dir:'desc' };
-let kmCache = {};
 let chosenIcon = '🏍️';
 let editingLogId = null, editingUpId = null, editingHrId = null;
 let omFotoUrl = null, upFotoUrl = null;
@@ -965,7 +964,7 @@ async function doLogin() {
 }
 
 function doLogout() {
-  TOKEN=null; USER=null; CBid=null; bikes=[]; kmCache={};
+  TOKEN=null; USER=null; CBid=null; bikes=[];
   localStorage.removeItem('gb_token');
   document.getElementById('app-screen').style.display='none';
   document.getElementById('auth-screen').style.display='flex';
@@ -993,7 +992,7 @@ async function loadVersion() {
 }
 
 // ── BIKES ─────────────────────────────────────────────────────────────────────
-function bikeKm(b) { const c=kmCache[b.id]; return (c!=null?c:b.km).toLocaleString('nl-NL'); }
+function bikeKm(b) { return (b.km_actueel ?? b.km).toLocaleString('nl-NL'); }
 
 function renderBikeList() {
   document.getElementById('bike-list').innerHTML = bikes.map(b => `
@@ -1021,8 +1020,8 @@ async function loadBikeData() {
     api('GET',`/bikes/${CBid}/upgrades`),
     api('GET',`/bikes/${CBid}/herinneringen`)
   ]);
-  const kmVals=logData.filter(i=>i.km>0).map(i=>i.km);
-  if (kmVals.length) kmCache[CBid]=Math.max(...kmVals);
+  // Herlaad bikes zodat km_actueel altijd vers is uit de database
+  bikes = await api('GET', '/bikes');
   // Share token ophalen
   const bike=bikes.find(b=>b.id===CBid);
   currentShareToken=bike?.share_token||null;
@@ -1365,8 +1364,8 @@ async function saveOnderhoud() {
     const body={datum:document.getElementById('om-datum').value,type:document.getElementById('om-type').value,beschrijving:document.getElementById('om-beschrijving').value||'Onderhoud',notities:document.getElementById('om-notities').value,km:parseInt(document.getElementById('om-km').value)||0,kosten:parseFloat(document.getElementById('om-kosten').value)||0,garage:document.getElementById('om-garage').value,foto:fotoUrl!==null?fotoUrl:omFotoUrl};
     if (editingLogId) { const u=await api('PUT',`/bikes/${CBid}/logboek/${editingLogId}`,body); logData=logData.map(i=>i.id===editingLogId?u:i); }
     else { const c=await api('POST',`/bikes/${CBid}/logboek`,body); logData.unshift(c); }
-    const kmVals=logData.filter(i=>i.km>0).map(i=>i.km);
-    if(kmVals.length) kmCache[CBid]=Math.max(...kmVals);
+    // Herlaad bikes voor actuele km_actueel
+    bikes = await api('GET', '/bikes');
     closeModal('onderhoud'); render(); renderBikeList(); toast(editingLogId?'Bijgewerkt!':'Opgeslagen!');
   } catch(e) { toast(e.message,'err'); }
   finally { btn.disabled=false; btn.textContent='Opslaan'; }
@@ -1449,7 +1448,8 @@ function renderShareTab() {
 
 // ── HERINNERINGEN EVALUEREN ───────────────────────────────────────────────────
 function evalHerinneringen() {
-  const maxKm = kmCache[CBid] || 0;
+  const bike = bikes.find(b=>b.id===CBid);
+  const maxKm = bike ? (bike.km_actueel ?? bike.km) : 0;
   const vandaag = new Date().toISOString().slice(0,10);
   const alerts = [];
 
@@ -1509,7 +1509,7 @@ function render() {
   if (!CBid) return;
   const bike=bikes.find(b=>b.id===CBid);
   const totaal=logData.reduce((s,i)=>s+i.kosten,0)+upData.reduce((s,u)=>s+u.kosten,0);
-  const maxKm=kmCache[CBid]||(bike?bike.km:0);
+  const maxKm = bike ? (bike.km_actueel ?? bike.km) : 0;
 
   // Stats
   document.getElementById('stat-totaal').textContent=fmt(totaal);
@@ -1556,7 +1556,7 @@ function renderUpgrades() {
 }
 
 function renderHerinneringen(alerts) {
-  const maxKm=kmCache[CBid]||0;
+  const curB = bikes.find(b=>b.id===CBid); const maxKm = curB ? (curB.km_actueel ?? curB.km) : 0;
   if (!alerts) alerts=evalHerinneringen();
   document.getElementById('herinnering-cards').innerHTML=alerts.length?alerts.map(h=>{
     let sub='', pct=0, barColor='var(--green)';
@@ -1586,7 +1586,7 @@ function renderHerinneringen(alerts) {
 
 function renderStatistieken() {
   const totaal=logData.reduce((s,i)=>s+i.kosten,0)+upData.reduce((s,u)=>s+u.kosten,0);
-  const maxKm=kmCache[CBid]||0;
+  const curB = bikes.find(b=>b.id===CBid); const maxKm = curB ? (curB.km_actueel ?? curB.km) : 0;
   const huidigJaar=new Date().getFullYear();
 
   // Per jaar
@@ -1726,7 +1726,7 @@ async function openAiImportModal() {
 }
 
 function renderAiImportLijst() {
-  const maxKm = kmCache[CBid] || (bikes.find(b=>b.id===CBid)?.km || 0);
+  const maxKm = (bikes.find(b=>b.id===CBid)?.km_actueel ?? bikes.find(b=>b.id===CBid)?.km ?? 0);
   const prio = { hoog:'🔴', normaal:'🟡', laag:'🟢' };
 
   // Filter al bestaande herinneringen (op titel) eruit
@@ -1787,7 +1787,8 @@ async function importeerAiIntervallen() {
       return;
     }
 
-    const maxKm = kmCache[CBid] || (bikes.find(b=>b.id===CBid)?.km || 0);
+    const impBike = bikes.find(b=>b.id===CBid);
+    const maxKm = impBike ? (impBike.km_actueel ?? impBike.km) : 0;
 
     await Promise.all(geselecteerd.map(it => {
       const kmGrens = it.km_interval && maxKm > 0 ? maxKm + it.km_interval : (it.km_interval || null);

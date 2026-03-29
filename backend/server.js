@@ -150,8 +150,15 @@ app.get('/api/auth/me', requireAuth, (req, res) => {
 });
 
 // ── BIKES ─────────────────────────────────────────────────────────────────────
-app.get('/api/bikes', requireAuth, (req, res) =>
-  res.json(db.prepare('SELECT * FROM bikes WHERE user_id=? ORDER BY created_at').all(req.userId)));
+app.get('/api/bikes', requireAuth, (req, res) => {
+  const bikes = db.prepare('SELECT * FROM bikes WHERE user_id=? ORDER BY created_at').all(req.userId);
+  // Voeg actuele km-stand toe vanuit logboek (hoogste geregistreerde km)
+  const result = bikes.map(b => {
+    const row = db.prepare('SELECT MAX(km) as maxkm FROM logboek WHERE bike_id=? AND km>0').get(b.id);
+    return { ...b, km_actueel: row?.maxkm || b.km };
+  });
+  res.json(result);
+});
 
 app.post('/api/bikes', requireAuth, (req, res) => {
   const { merk, model, jaar, km, kenteken, icon, voertuigtype } = req.body;
@@ -159,7 +166,8 @@ app.post('/api/bikes', requireAuth, (req, res) => {
   const id = uid();
   db.prepare('INSERT INTO bikes (id,user_id,merk,model,jaar,km,kenteken,icon,voertuigtype) VALUES (?,?,?,?,?,?,?,?,?)')
     .run(id, req.userId, merk, model, jaar||'', km||0, kenteken||'', icon||'🏍️', voertuigtype||'motor');
-  res.status(201).json(db.prepare('SELECT * FROM bikes WHERE id=?').get(id));
+  const b2 = db.prepare('SELECT * FROM bikes WHERE id=?').get(id);
+  res.status(201).json({ ...b2, km_actueel: b2.km });
 });
 
 app.put('/api/bikes/:id', requireAuth, (req, res) => {
@@ -168,7 +176,9 @@ app.put('/api/bikes/:id', requireAuth, (req, res) => {
   const { merk, model, jaar, km, kenteken, icon, voertuigtype } = req.body;
   db.prepare('UPDATE bikes SET merk=?,model=?,jaar=?,km=?,kenteken=?,icon=?,voertuigtype=? WHERE id=?')
     .run(merk||b.merk, model||b.model, jaar??b.jaar, km??b.km, kenteken??b.kenteken, icon||b.icon, voertuigtype||b.voertuigtype, req.params.id);
-  res.json(db.prepare('SELECT * FROM bikes WHERE id=?').get(req.params.id));
+  const bUp = db.prepare('SELECT * FROM bikes WHERE id=?').get(req.params.id);
+  const rowUp = db.prepare('SELECT MAX(km) as maxkm FROM logboek WHERE bike_id=? AND km>0').get(req.params.id);
+  res.json({ ...bUp, km_actueel: rowUp?.maxkm || bUp.km });
 });
 
 app.delete('/api/bikes/:id', requireAuth, (req, res) => {
@@ -222,7 +232,15 @@ app.post('/api/bikes/:bid/logboek', requireAuth, (req, res) => {
   const id = uid();
   db.prepare('INSERT INTO logboek (id,bike_id,user_id,datum,type,beschrijving,notities,km,kosten,garage,foto) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
     .run(id, req.params.bid, req.userId, datum||'', type, beschrijving, notities||'', km||0, kosten||0, garage||'', foto||null);
-  res.status(201).json(db.prepare('SELECT * FROM logboek WHERE id=?').get(id));
+  const newItem = db.prepare('SELECT * FROM logboek WHERE id=?').get(id);
+  // Update km_actueel op de bike als dit de hoogste km is
+  if (newItem.km > 0) {
+    const curMax = db.prepare('SELECT MAX(km) as m FROM logboek WHERE bike_id=? AND km>0').get(req.params.bid)?.m || 0;
+    if (newItem.km >= curMax) {
+      // km_actueel wordt automatisch berekend bij volgende GET /api/bikes
+    }
+  }
+  res.status(201).json(newItem);
 });
 
 app.put('/api/bikes/:bid/logboek/:id', requireAuth, (req, res) => {

@@ -38,26 +38,52 @@
 body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.5;transition:background .2s,color .2s}
 
 /* ── AUTH ── */
-#auth-screen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 100%);padding:2rem}
-.auth-logo{font-size:28px;font-weight:700;color:white;margin-bottom:4px;display:flex;align-items:center;gap:10px}
-.auth-logo-icon{width:36px;height:36px;background:rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
-.auth-tagline{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:2.5rem}
-.auth-card{background:white;border-radius:16px;width:min(400px,100%);box-shadow:0 24px 64px rgba(0,0,0,.25);overflow:hidden}
-.auth-tabs{display:grid;grid-template-columns:1fr 1fr;background:#f9fafb;border-bottom:1px solid #e5e7eb}
-.auth-tab{padding:.85rem;text-align:center;cursor:pointer;font-weight:500;font-size:14px;color:#6b7280;background:none;border:none;border-bottom:2px solid transparent;transition:all .15s;font-family:'Inter',sans-serif}
-.auth-tab.active{color:#2563eb;border-bottom-color:#2563eb;background:white}
-.auth-body{padding:1.5rem;display:none}
+/* ── LOGIN PAGINA ── */
+#auth-screen{min-height:100vh;display:grid;grid-template-columns:1fr 420px;position:relative;overflow:hidden}
+#auth-screen::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,0,0,.85) 0%,rgba(0,0,0,.4) 50%,rgba(0,0,0,.7) 100%),url('/bg-login.svg') center/cover no-repeat;z-index:0}
+.auth-left{position:relative;z-index:1;display:flex;flex-direction:column;justify-content:center;padding:4rem;color:white}
+.auth-brand{margin-bottom:2rem}
+.auth-brand img{height:56px;filter:drop-shadow(0 4px 24px rgba(249,115,22,.4))}
+.auth-headline{font-size:clamp(28px,4vw,48px);font-weight:800;line-height:1.1;letter-spacing:-1px;margin-bottom:1rem;color:white}
+.auth-headline span{background:linear-gradient(90deg,#f97316,#dc2626);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.auth-sub{font-size:16px;color:rgba(255,255,255,.6);line-height:1.6;max-width:420px}
+.auth-features{margin-top:2.5rem;display:flex;flex-direction:column;gap:.875rem}
+.auth-feature{display:flex;align-items:center;gap:.875rem;color:rgba(255,255,255,.8);font-size:14px}
+.auth-feature-icon{width:36px;height:36px;border-radius:8px;background:rgba(249,115,22,.2);border:1px solid rgba(249,115,22,.3);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.auth-right{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;padding:2rem;background:rgba(15,23,42,.6);backdrop-filter:blur(24px);border-left:1px solid rgba(255,255,255,.08)}
+.auth-card{width:100%;max-width:380px}
+.auth-card-title{font-size:22px;font-weight:700;color:white;margin-bottom:4px}
+.auth-card-sub{font-size:13px;color:rgba(255,255,255,.45);margin-bottom:1.5rem}
+.auth-lang-selector{display:flex;gap:4px;margin-bottom:1.5rem;flex-wrap:wrap}
+.auth-lang-btn{padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.15);background:none;color:rgba(255,255,255,.5);font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.auth-lang-btn:hover{border-color:rgba(249,115,22,.5);color:#f97316}
+.auth-lang-btn.active{background:rgba(249,115,22,.15);border-color:#f97316;color:#f97316}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;background:rgba(255,255,255,.05);border-radius:10px;padding:4px;margin-bottom:1.25rem;gap:4px}
+.auth-tab{padding:.6rem;text-align:center;cursor:pointer;font-weight:600;font-size:13px;color:rgba(255,255,255,.4);background:none;border:none;border-radius:7px;transition:all .15s;font-family:'Inter',sans-serif}
+.auth-tab.active{color:white;background:rgba(249,115,22,.25);box-shadow:0 2px 8px rgba(249,115,22,.2)}
+.auth-body{display:none}
 .auth-body.show{display:block}
-.auth-field{margin-bottom:.875rem}
-.auth-field label{display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
-.auth-field input{width:100%;padding:.65rem .875rem;border:1.5px solid #d1d5db;border-radius:6px;font-size:14px;font-family:'Inter',sans-serif;color:#111827;outline:none;transition:all .15s}
-.auth-field input:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
-.auth-error{background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:.65rem .875rem;font-size:13px;color:#dc2626;margin-bottom:.875rem;display:none}
+.auth-field{margin-bottom:1rem}
+.auth-field label{display:block;font-size:11px;font-weight:600;color:rgba(255,255,255,.5);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px}
+.auth-field input{width:100%;padding:.7rem 1rem;border:1.5px solid rgba(255,255,255,.1);border-radius:8px;font-size:14px;font-family:'Inter',sans-serif;color:white;background:rgba(255,255,255,.06);outline:none;transition:all .15s}
+.auth-field input::placeholder{color:rgba(255,255,255,.25)}
+.auth-field input:focus{border-color:#f97316;background:rgba(255,255,255,.1);box-shadow:0 0 0 3px rgba(249,115,22,.15)}
+.auth-error{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:.65rem 1rem;font-size:13px;color:#fca5a5;margin-bottom:1rem;display:none}
 .auth-error.show{display:block}
-.auth-submit{width:100%;padding:.75rem;background:#2563eb;color:white;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s;margin-top:.25rem}
-.auth-submit:hover{background:#1d4ed8}
-.auth-submit:disabled{opacity:.6;cursor:not-allowed}
-.auth-footer{text-align:center;font-size:12px;color:rgba(255,255,255,.3);margin-top:1.25rem}
+.auth-success{background:rgba(34,197,94,.15);border:1px solid rgba(34,197,94,.3);border-radius:8px;padding:.65rem 1rem;font-size:13px;color:#86efac;margin-bottom:1rem;display:none}
+.auth-success.show{display:block}
+.auth-submit{width:100%;padding:.8rem;background:linear-gradient(135deg,#f97316,#dc2626);color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .15s;margin-top:.25rem;letter-spacing:.3px}
+.auth-submit:hover{opacity:.9}
+.auth-submit:disabled{opacity:.5;cursor:not-allowed}
+.auth-forgot{text-align:right;margin-top:.375rem;margin-bottom:.25rem}
+.auth-forgot a{font-size:12px;color:rgba(255,255,255,.4);text-decoration:none;cursor:pointer;transition:color .15s}
+.auth-forgot a:hover{color:#f97316}
+.auth-footer-bottom{text-align:center;font-size:11px;color:rgba(255,255,255,.2);margin-top:1.5rem}
+@media(max-width:768px){
+  #auth-screen{grid-template-columns:1fr}
+  .auth-left{display:none}
+  .auth-right{min-height:100vh;background:rgba(15,23,42,.95)}
+}
 
 /* ── APP ── */
 #app-screen{display:none;min-height:100vh}
@@ -364,29 +390,111 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-he
 
 <!-- ══ AUTH ══ -->
 <div id="auth-screen">
-  <div class="auth-logo"><div class="auth-logo-icon">🏍️</div>GarageBook</div>
-  <div class="auth-tagline">Jouw digitale voertuiglogboek</div>
-  <div class="auth-card">
-    <div class="auth-tabs">
-      <button class="auth-tab active" onclick="showAuthTab('login')">Inloggen</button>
-      <button class="auth-tab" onclick="showAuthTab('register')">Registreren</button>
+  <!-- Links: branding + features -->
+  <div class="auth-left">
+    <div class="auth-brand">
+      <img src="/logo.svg" alt="GarageBook" id="auth-logo-img">
     </div>
-    <div id="auth-login" class="auth-body show">
-      <div class="auth-error" id="login-error"></div>
-      <div class="auth-field"><label>E-mailadres</label><input type="email" id="login-email" placeholder="jouw@email.nl" autocomplete="email"></div>
-      <div class="auth-field"><label>Wachtwoord</label><input type="password" id="login-pw" placeholder="••••••••" autocomplete="current-password"></div>
-      <button class="auth-submit" id="login-btn" onclick="doLogin()">Inloggen</button>
-    </div>
-    <div id="auth-register" class="auth-body">
-      <div class="auth-error" id="reg-error"></div>
-      <div class="auth-field"><label>Naam</label><input type="text" id="reg-naam" placeholder="Jouw naam"></div>
-      <div class="auth-field"><label>E-mailadres</label><input type="email" id="reg-email" placeholder="jouw@email.nl" autocomplete="email"></div>
-      <div class="auth-field"><label>Wachtwoord</label><input type="password" id="reg-pw" placeholder="Min. 6 tekens" autocomplete="new-password"></div>
-      <div class="auth-field"><label>Bevestig wachtwoord</label><input type="password" id="reg-pw2" placeholder="Herhaal wachtwoord"></div>
-      <button class="auth-submit" id="reg-btn" onclick="doRegister()">Account aanmaken</button>
+    <div class="auth-headline" id="auth-headline">Jouw voertuig.<br><span>Jouw verhaal.</span></div>
+    <div class="auth-sub" id="auth-sub">Houd alles bij — van de eerste kilometer tot de laatste sleutelbeurt. Onderhoud, upgrades, kosten en herinneringen op één plek.</div>
+    <div class="auth-features">
+      <div class="auth-feature"><div class="auth-feature-icon">🔧</div><span id="feat1">Onderhoudslogboek met foto's</span></div>
+      <div class="auth-feature"><div class="auth-feature-icon">🤖</div><span id="feat2">AI zoekt onderhoudsintervallen op</span></div>
+      <div class="auth-feature"><div class="auth-feature-icon">📊</div><span id="feat3">Statistieken en kostenanalyse</span></div>
+      <div class="auth-feature"><div class="auth-feature-icon">🔗</div><span id="feat4">Deellink voor anderen</span></div>
     </div>
   </div>
-  <div class="auth-footer">GarageBook — Bouw aan de waarde van je voertuig</div>
+
+  <!-- Rechts: login form -->
+  <div class="auth-right">
+    <div class="auth-card">
+      <!-- Taal selector -->
+      <div class="auth-lang-selector">
+        <button class="auth-lang-btn active" onclick="setLang('nl',this)">🇳🇱 NL</button>
+        <button class="auth-lang-btn" onclick="setLang('en',this)">🇬🇧 EN</button>
+        <button class="auth-lang-btn" onclick="setLang('de',this)">🇩🇪 DE</button>
+        <button class="auth-lang-btn" onclick="setLang('fr',this)">🇫🇷 FR</button>
+        <button class="auth-lang-btn" onclick="setLang('es',this)">🇪🇸 ES</button>
+      </div>
+
+      <div class="auth-card-title" id="auth-card-title">Welkom terug</div>
+      <div class="auth-card-sub" id="auth-card-sub">Log in op je GarageBook account</div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login-btn" onclick="showAuthTab('login')" data-i18n="login">Inloggen</button>
+        <button class="auth-tab" id="tab-reg-btn" onclick="showAuthTab('register')" data-i18n="register">Registreren</button>
+      </div>
+
+      <!-- LOGIN -->
+      <div id="auth-login" class="auth-body show">
+        <div class="auth-error" id="login-error"></div>
+        <div class="auth-field">
+          <label data-i18n="email">E-mailadres</label>
+          <input type="email" id="login-email" autocomplete="email">
+        </div>
+        <div class="auth-field">
+          <label data-i18n="password">Wachtwoord</label>
+          <input type="password" id="login-pw" autocomplete="current-password">
+        </div>
+        <div class="auth-forgot"><a onclick="showAuthTab('forgot')" data-i18n="forgot_password">Wachtwoord vergeten?</a></div>
+        <button class="auth-submit" id="login-btn" onclick="doLogin()" data-i18n="login_btn">Inloggen</button>
+      </div>
+
+      <!-- REGISTREREN -->
+      <div id="auth-register" class="auth-body">
+        <div class="auth-error" id="reg-error"></div>
+        <div class="auth-field">
+          <label data-i18n="name">Naam</label>
+          <input type="text" id="reg-naam" autocomplete="name">
+        </div>
+        <div class="auth-field">
+          <label data-i18n="email">E-mailadres</label>
+          <input type="email" id="reg-email" autocomplete="email">
+        </div>
+        <div class="auth-field">
+          <label data-i18n="password">Wachtwoord</label>
+          <input type="password" id="reg-pw" autocomplete="new-password">
+        </div>
+        <div class="auth-field">
+          <label data-i18n="confirm_password">Bevestig wachtwoord</label>
+          <input type="password" id="reg-pw2">
+        </div>
+        <button class="auth-submit" id="reg-btn" onclick="doRegister()" data-i18n="register_btn">Account aanmaken</button>
+      </div>
+
+      <!-- WACHTWOORD VERGETEN -->
+      <div id="auth-forgot" class="auth-body">
+        <div class="auth-error" id="forgot-error"></div>
+        <div class="auth-success" id="forgot-success"></div>
+        <p style="font-size:13px;color:rgba(255,255,255,.5);margin-bottom:1rem" data-i18n="forgot_desc">Vul je e-mailadres in. Als er een account bestaat ontvang je een reset link.</p>
+        <div class="auth-field">
+          <label data-i18n="email">E-mailadres</label>
+          <input type="email" id="forgot-email" autocomplete="email">
+        </div>
+        <button class="auth-submit" id="forgot-btn" onclick="doForgotPassword()" data-i18n="send_reset">Reset link versturen</button>
+        <div style="text-align:center;margin-top:.875rem">
+          <a onclick="showAuthTab('login')" style="font-size:12px;color:rgba(255,255,255,.4);cursor:pointer" data-i18n="back_to_login">← Terug naar inloggen</a>
+        </div>
+      </div>
+
+      <!-- WACHTWOORD RESET -->
+      <div id="auth-reset" class="auth-body">
+        <div class="auth-error" id="reset-error"></div>
+        <div class="auth-success" id="reset-success"></div>
+        <div class="auth-field">
+          <label data-i18n="new_password">Nieuw wachtwoord</label>
+          <input type="password" id="reset-pw">
+        </div>
+        <div class="auth-field">
+          <label data-i18n="confirm_password">Bevestig wachtwoord</label>
+          <input type="password" id="reset-pw2">
+        </div>
+        <button class="auth-submit" id="reset-btn" onclick="doResetPassword()" data-i18n="save_password">Wachtwoord opslaan</button>
+      </div>
+
+      <div class="auth-footer-bottom">GarageBook — <span data-i18n="footer_tagline">Bouw aan de waarde van je voertuig</span></div>
+    </div>
+  </div>
 </div>
 
 <!-- ══ PUBLIEKE SHARE PAGINA ══ -->
@@ -884,6 +992,74 @@ function toast(msg, type='ok') {
   clearTimeout(el._t); el._t = setTimeout(() => el.className='', 3000);
 }
 
+
+// ── VERTALINGEN ───────────────────────────────────────────────────────────────
+const I18N={nl:{login:'Inloggen',register:'Registreren',login_btn:'Inloggen',register_btn:'Account aanmaken',email:'E-mailadres',password:'Wachtwoord',confirm_password:'Bevestig wachtwoord',name:'Naam',forgot_password:'Wachtwoord vergeten?',forgot_desc:'Vul je e-mailadres in. Als er een account bestaat ontvang je een reset link.',send_reset:'Reset link versturen',back_to_login:'← Terug naar inloggen',new_password:'Nieuw wachtwoord',save_password:'Wachtwoord opslaan',footer_tagline:'Bouw aan de waarde van je voertuig',auth_headline:'Jouw voertuig.<br><span>Jouw verhaal.</span>',auth_sub:'Houd alles bij — van de eerste kilometer tot de laatste sleutelbeurt.',auth_card_title_login:'Welkom terug',auth_card_sub_login:'Log in op je GarageBook account',auth_card_title_reg:'Account aanmaken',auth_card_sub_reg:'Start jouw digitale garage vandaag',feat1:"Onderhoudslogboek met foto's",feat2:'AI zoekt onderhoudsintervallen op',feat3:'Statistieken en kostenanalyse',feat4:'Deellink voor anderen',reset_success:'Reset link verstuurd! Controleer je inbox.',pw_reset_success:'Wachtwoord gewijzigd! Je kunt nu inloggen.',my_vehicles:'Mijn voertuigen',add_vehicle:'Voertuig toevoegen',maintenance_log:'Onderhoudslogboek',upgrades:'Upgrades & Parts',reminders:'Herinneringen',statistics:'Statistieken',timeline:'Tijdlijn',share_link:'Deellink',dashboard:'Dashboard',logout:'Uitloggen',no_vehicle_title:'Geen voertuig geselecteerd',no_vehicle_sub:'Voeg je eerste voertuig toe om te beginnen'},en:{login:'Log in',register:'Register',login_btn:'Log in',register_btn:'Create account',email:'Email address',password:'Password',confirm_password:'Confirm password',name:'Name',forgot_password:'Forgot password?',forgot_desc:"Enter your email. If an account exists you'll receive a reset link.",send_reset:'Send reset link',back_to_login:'← Back to login',new_password:'New password',save_password:'Save password',footer_tagline:'Build the value of your vehicle',auth_headline:'Your vehicle.<br><span>Your story.</span>',auth_sub:'Keep track of everything — from the first kilometer to the last service.',auth_card_title_login:'Welcome back',auth_card_sub_login:'Log in to your GarageBook account',auth_card_title_reg:'Create account',auth_card_sub_reg:'Start your digital garage today',feat1:'Maintenance log with photos',feat2:'AI looks up service intervals',feat3:'Statistics and cost analysis',feat4:'Share link for others',reset_success:'Reset link sent! Check your inbox.',pw_reset_success:'Password changed! You can now log in.',my_vehicles:'My vehicles',add_vehicle:'Add vehicle',maintenance_log:'Maintenance log',upgrades:'Upgrades & Parts',reminders:'Reminders',statistics:'Statistics',timeline:'Timeline',share_link:'Share link',dashboard:'Dashboard',logout:'Log out',no_vehicle_title:'No vehicle selected',no_vehicle_sub:'Add your first vehicle to get started'},de:{login:'Anmelden',register:'Registrieren',login_btn:'Anmelden',register_btn:'Konto erstellen',email:'E-Mail-Adresse',password:'Passwort',confirm_password:'Passwort bestätigen',name:'Name',forgot_password:'Passwort vergessen?',forgot_desc:'Gib deine E-Mail-Adresse ein. Falls ein Konto existiert erhältst du einen Reset-Link.',send_reset:'Reset-Link senden',back_to_login:'← Zurück zum Login',new_password:'Neues Passwort',save_password:'Passwort speichern',footer_tagline:'Baue den Wert deines Fahrzeugs auf',auth_headline:'Dein Fahrzeug.<br><span>Deine Geschichte.</span>',auth_sub:'Behalte alles im Blick — vom ersten Kilometer bis zum letzten Service.',auth_card_title_login:'Willkommen zurück',auth_card_sub_login:'Melde dich bei GarageBook an',auth_card_title_reg:'Konto erstellen',auth_card_sub_reg:'Starte heute deine digitale Garage',feat1:'Wartungsprotokoll mit Fotos',feat2:'KI sucht Wartungsintervalle',feat3:'Statistiken und Kostenanalyse',feat4:'Freigabelink für andere',reset_success:'Reset-Link gesendet!',pw_reset_success:'Passwort geändert!',my_vehicles:'Meine Fahrzeuge',add_vehicle:'Fahrzeug hinzufügen',maintenance_log:'Wartungsprotokoll',upgrades:'Upgrades & Teile',reminders:'Erinnerungen',statistics:'Statistiken',timeline:'Zeitstrahl',share_link:'Freigabelink',dashboard:'Dashboard',logout:'Abmelden',no_vehicle_title:'Kein Fahrzeug ausgewählt',no_vehicle_sub:'Füge dein erstes Fahrzeug hinzu'},fr:{login:'Connexion',register:"S'inscrire",login_btn:'Se connecter',register_btn:'Créer un compte',email:'Adresse e-mail',password:'Mot de passe',confirm_password:'Confirmer le mot de passe',name:'Nom',forgot_password:'Mot de passe oublié?',forgot_desc:"Entrez votre e-mail. Si un compte existe vous recevrez un lien.",send_reset:'Envoyer le lien',back_to_login:'← Retour à la connexion',new_password:'Nouveau mot de passe',save_password:'Enregistrer',footer_tagline:'Valorisez votre véhicule',auth_headline:'Votre véhicule.<br><span>Votre histoire.</span>',auth_sub:'Suivez tout — du premier kilomètre au dernier entretien.',auth_card_title_login:'Bon retour',auth_card_sub_login:'Connectez-vous à GarageBook',auth_card_title_reg:'Créer un compte',auth_card_sub_reg:'Commencez votre garage numérique',feat1:"Journal d'entretien avec photos",feat2:"L'IA cherche les intervalles",feat3:'Statistiques et analyse des coûts',feat4:'Lien de partage pour les autres',reset_success:'Lien envoyé!',pw_reset_success:'Mot de passe modifié!',my_vehicles:'Mes véhicules',add_vehicle:'Ajouter un véhicule',maintenance_log:"Journal d'entretien",upgrades:'Améliorations & Pièces',reminders:'Rappels',statistics:'Statistiques',timeline:'Chronologie',share_link:'Lien de partage',dashboard:'Tableau de bord',logout:'Déconnexion',no_vehicle_title:'Aucun véhicule sélectionné',no_vehicle_sub:'Ajoutez votre premier véhicule'},es:{login:'Iniciar sesión',register:'Registrarse',login_btn:'Iniciar sesión',register_btn:'Crear cuenta',email:'Correo electrónico',password:'Contraseña',confirm_password:'Confirmar contraseña',name:'Nombre',forgot_password:'¿Olvidaste tu contraseña?',forgot_desc:'Ingresa tu correo. Si existe una cuenta recibirás un enlace.',send_reset:'Enviar enlace',back_to_login:'← Volver al inicio de sesión',new_password:'Nueva contraseña',save_password:'Guardar contraseña',footer_tagline:'Construye el valor de tu vehículo',auth_headline:'Tu vehículo.<br><span>Tu historia.</span>',auth_sub:'Lleva un registro de todo.',auth_card_title_login:'Bienvenido de vuelta',auth_card_sub_login:'Inicia sesión en GarageBook',auth_card_title_reg:'Crear cuenta',auth_card_sub_reg:'Comienza tu garaje digital hoy',feat1:'Registro de mantenimiento con fotos',feat2:'IA busca intervalos de mantenimiento',feat3:'Estadísticas y análisis de costos',feat4:'Enlace compartido para otros',reset_success:'¡Enlace enviado!',pw_reset_success:'¡Contraseña cambiada!',my_vehicles:'Mis vehículos',add_vehicle:'Agregar vehículo',maintenance_log:'Registro de mantenimiento',upgrades:'Mejoras & Repuestos',reminders:'Recordatorios',statistics:'Estadísticas',timeline:'Línea de tiempo',share_link:'Enlace compartido',dashboard:'Panel',logout:'Cerrar sesión',no_vehicle_title:'Ningún vehículo seleccionado',no_vehicle_sub:'Agrega tu primer vehículo para comenzar'}};
+
+let currentLang=localStorage.getItem('gb_lang')||'nl';
+let resetToken=null;
+
+function t(key){return(I18N[currentLang]||I18N.nl)[key]||(I18N.nl)[key]||key;}
+
+function applyTranslations(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.getAttribute('data-i18n'),v=t(k);
+    if(el.tagName==='INPUT')el.placeholder=v;else el.textContent=v;
+  });
+  const hl=document.getElementById('auth-headline');if(hl)hl.innerHTML=t('auth_headline');
+  const sub=document.getElementById('auth-sub');if(sub)sub.textContent=t('auth_sub');
+  ['feat1','feat2','feat3','feat4'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t(id);});
+  document.querySelectorAll('.auth-lang-btn').forEach(btn=>{btn.classList.toggle('active',btn.getAttribute('onclick').includes("'"+currentLang+"'"));});
+  const nbTitle=document.querySelector('.no-bike-title');if(nbTitle)nbTitle.textContent=t('no_vehicle_title');
+  const nbSub=document.querySelector('.no-bike-sub');if(nbSub)nbSub.textContent=t('no_vehicle_sub');
+  const logoutBtn=document.querySelector('.logout-btn');if(logoutBtn)logoutBtn.textContent=t('logout');
+}
+
+function setLang(lang){
+  currentLang=lang;
+  localStorage.setItem('gb_lang',lang);
+  applyTranslations();
+  const isLogin=document.getElementById('auth-login')?.classList.contains('show');
+  const titleEl=document.getElementById('auth-card-title');
+  const subEl=document.getElementById('auth-card-sub');
+  if(titleEl)titleEl.textContent=isLogin?t('auth_card_title_login'):t('auth_card_title_reg');
+  if(subEl)subEl.textContent=isLogin?t('auth_card_sub_login'):t('auth_card_sub_reg');
+}
+
+async function doForgotPassword(){
+  const email=document.getElementById('forgot-email').value.trim();
+  const errEl=document.getElementById('forgot-error');
+  const sucEl=document.getElementById('forgot-success');
+  const btn=document.getElementById('forgot-btn');
+  errEl.classList.remove('show');sucEl.classList.remove('show');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+  try{
+    await fetch('/api/auth/forgot-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email})});
+    sucEl.textContent=t('reset_success');sucEl.classList.add('show');
+  }catch(e){errEl.textContent=e.message;errEl.classList.add('show');}
+  finally{btn.disabled=false;btn.textContent=t('send_reset');}
+}
+
+async function doResetPassword(){
+  const pw=document.getElementById('reset-pw').value;
+  const pw2=document.getElementById('reset-pw2').value;
+  const errEl=document.getElementById('reset-error');
+  const sucEl=document.getElementById('reset-success');
+  const btn=document.getElementById('reset-btn');
+  errEl.classList.remove('show');sucEl.classList.remove('show');
+  if(pw!==pw2){errEl.textContent=t('confirm_password')+' komt niet overeen';errEl.classList.add('show');return;}
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span>';
+  try{
+    const res=await fetch('/api/auth/reset-password',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:resetToken,password:pw})});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error);
+    sucEl.textContent=t('pw_reset_success');sucEl.classList.add('show');
+    setTimeout(()=>showAuthTab('login'),2000);
+  }catch(e){errEl.textContent=e.message;errEl.classList.add('show');}
+  finally{btn.disabled=false;btn.textContent=t('save_password');}
+}
+
+
 // ── DARK MODE ─────────────────────────────────────────────────────────────────
 function applyTheme(dark) {
   document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
@@ -927,10 +1103,18 @@ function printPDF() {
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
-function showAuthTab(t) {
-  document.getElementById('auth-login').classList.toggle('show', t==='login');
-  document.getElementById('auth-register').classList.toggle('show', t==='register');
-  document.querySelectorAll('.auth-tab').forEach((el,i) => el.classList.toggle('active', i===(t==='login'?0:1)));
+function showAuthTab(tab) {
+  ['login','register','forgot','reset'].forEach(id => {
+    const el = document.getElementById('auth-'+id);
+    if (el) el.classList.toggle('show', id===tab);
+  });
+  document.getElementById('tab-login-btn')?.classList.toggle('active', tab==='login'||tab==='forgot'||tab==='reset');
+  document.getElementById('tab-reg-btn')?.classList.toggle('active', tab==='register');
+  // Update card title
+  const titleEl = document.getElementById('auth-card-title');
+  const subEl = document.getElementById('auth-card-sub');
+  if (titleEl) titleEl.textContent = (tab==='register') ? t('auth_card_title_reg') : t('auth_card_title_login');
+  if (subEl) subEl.textContent = (tab==='register') ? t('auth_card_sub_reg') : t('auth_card_sub_login');
 }
 function showErr(id, msg) { const e=document.getElementById(id); e.textContent=msg; e.classList.add('show'); }
 function hideErr(id) { document.getElementById(id).classList.remove('show'); }
@@ -967,7 +1151,7 @@ function doLogout() {
   TOKEN=null; USER=null; CBid=null; bikes=[];
   localStorage.removeItem('gb_token');
   document.getElementById('app-screen').style.display='none';
-  document.getElementById('auth-screen').style.display='flex';
+  document.getElementById('auth-screen').style.display='grid';
 }
 
 async function bootApp() {
@@ -1833,11 +2017,21 @@ document.addEventListener('keydown', e => {
 // ── BOOT ──────────────────────────────────────────────────────────────────────
 (async()=>{
   loadVersion();
-  // Check of dit een share-pagina is
+  applyTranslations();
+  // Check share pagina
   const shareMatch = window.location.pathname.match(/^\/share\/([a-f0-9]+)$/);
   if (shareMatch) { loadSharePage(shareMatch[1]); return; }
+  // Check wachtwoord reset link
+  const resetMatch = window.location.search.match(/[?&]token=([a-f0-9]+)/);
+  if (resetMatch) {
+    resetToken = resetMatch[1];
+    document.getElementById('auth-screen').style.display = 'grid';
+    showAuthTab('reset');
+    window.history.replaceState({}, '', '/');
+    return;
+  }
   if (TOKEN) { try { await bootApp(); } catch { doLogout(); } }
-  else document.getElementById('auth-screen').style.display='flex';
+  else { document.getElementById('auth-screen').style.display = 'grid'; applyTranslations(); }
 })();
 </script>
 

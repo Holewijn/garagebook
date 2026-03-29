@@ -371,6 +371,30 @@ tr:hover td{background:var(--surface2)}
         </div>
 
         <div class="section">
+          <div class="section-head"><span class="section-title">📧 E-mail (SMTP) — Wachtwoord reset</span></div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title">SMTP configuratie</div>
+              <div class="setting-desc">Vereist voor de "Wachtwoord vergeten" functie. Gebruik bijv. Gmail, Mailgun, Sendgrid of je eigen mailserver.</div>
+              <div style="margin-top:.5rem" id="smtp-status"></div>
+            </div>
+            <div class="setting-control">
+              <button class="btn btn-primary btn-sm" onclick="openModal('smtp')">⚙️ SMTP instellen</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title">Openstaande reset verzoeken</div>
+              <div class="setting-desc">Gebruikers die een reset hebben aangevraagd maar nog niet hebben afgerond.</div>
+            </div>
+            <div class="setting-control">
+              <button class="btn btn-sm" onclick="loadResets()">🔍 Bekijken</button>
+            </div>
+          </div>
+          <div id="resets-lijst" style="display:none;padding:0 1.25rem 1.25rem"></div>
+        </div>
+
+        <div class="section">
           <div class="section-head"><span class="section-title">🔐 Admin wachtwoord wijzigen</span></div>
           <div class="setting-row">
             <div class="setting-info">
@@ -436,6 +460,34 @@ tr:hover td{background:var(--surface2)}
     <div class="modal-foot">
       <button class="btn" onclick="closeModal('api-key')">Annuleren</button>
       <button class="btn btn-primary" onclick="saveApiKey()">Opslaan & activeren</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SMTP -->
+<div class="modal-overlay" id="modal-smtp">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">📧 SMTP configuratie</div><button class="modal-close" onclick="closeModal('smtp')">×</button></div>
+    <div class="modal-body">
+      <div style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:.875rem;font-size:13px;color:#93c5fd;margin-bottom:1rem">
+        💡 Tip voor Gmail: gebruik een <a href="https://myaccount.google.com/apppasswords" target="_blank" style="color:#60a5fa">App-wachtwoord</a> en stel poort 587 in.
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>SMTP Host</label><input type="text" id="smtp-host" placeholder="smtp.gmail.com"></div>
+        <div class="form-group"><label>Poort</label><input type="number" id="smtp-port" placeholder="587" value="587"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Gebruikersnaam</label><input type="text" id="smtp-user" placeholder="jouw@gmail.com"></div>
+        <div class="form-group"><label>Wachtwoord / App-key</label><input type="password" id="smtp-pass" placeholder="••••••••••••"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>App URL (voor reset links)</label><input type="text" id="smtp-appurl" placeholder="https://garagebook.jouwdomein.nl"></div>
+        <div class="form-group"><label>Afzendernaam</label><input type="text" id="smtp-fromname" placeholder="GarageBook" value="GarageBook"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('smtp')">Annuleren</button>
+      <button class="btn btn-primary" onclick="saveSmtp()">Opslaan & activeren</button>
     </div>
   </div>
 </div>
@@ -516,7 +568,7 @@ document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('cli
 
 // ── LOAD ALL ──────────────────────────────────────────────────────────────────
 async function loadAll() {
-  await Promise.all([loadStats(), loadUsers(), loadBackups(), loadSettings()]);
+  await Promise.all([loadStats(), loadUsers(), loadBackups(), loadSettings(), loadSmtp()]);
 }
 
 // ── STATS ─────────────────────────────────────────────────────────────────────

@@ -636,3 +636,149 @@ app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, '../frontend/a
 // ── CATCH-ALL ─────────────────────────────────────────────────────────────────
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../frontend/index.html')));
 app.listen(PORT, () => console.log(`GarageBook v${require('./package.json').version} running on port ${PORT}`));
+
+// ── WACHTWOORD RESET ──────────────────────────────────────────────────────────
+// Tabel voor reset tokens
+db.exec(`CREATE TABLE IF NOT EXISTS password_resets (
+  token TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL,
+  expires_at TEXT NOT NULL,
+  used INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+)`);
+
+const nodemailer = require('nodemailer');
+
+function getMailTransport() {
+  const host = process.env.SMTP_HOST;
+  const port = parseInt(process.env.SMTP_PORT || '587');
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+  if (!host || !user || !pass) return null;
+  return nodemailer.createTransport({
+    host, port,
+    secure: port === 465,
+    auth: { user, pass }
+  });
+}
+
+// POST /api/auth/forgot-password
+app.post('/api/auth/forgot-password',
+  rateLimit({ windowMs: 15*60*1000, max: 5, message: { error: 'Te veel pogingen.' } }),
+  async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'E-mailadres is verplicht.' });
+    const user = db.prepare('SELECT * FROM users WHERE email=?').get(email.toLowerCase());
+    // Altijd succes teruggeven — geen gebruikersinfo lekken
+    if (!user) return res.json({ ok: true });
+
+    const token = require('crypto').randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 uur
+    db.prepare('DELETE FROM password_resets WHERE user_id=?').run(user.id);
+    db.prepare('INSERT INTO password_resets (token,user_id,expires_at) VALUES (?,?,?)').run(token, user.id, expires);
+
+    const appUrl = process.env.APP_URL || 'http://localhost:3000';
+    const resetUrl = `${appUrl}/reset-password?token=${token}`;
+    const fromName = process.env.SMTP_FROM_NAME || 'GarageBook';
+    const fromEmail = process.env.SMTP_USER;
+
+    const transport = getMailTransport();
+    if (!transport) {
+      console.log(`[RESET] Token voor ${email}: ${token} (geen SMTP geconfigureerd)`);
+      return res.json({ ok: true });
+    }
+
+    try {
+      await transport.sendMail({
+        from: `"${fromName}" <${fromEmail}>`,
+        to: email,
+        subject: 'Wachtwoord opnieuw instellen — GarageBook',
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px">
+            <div style="background:#0f172a;padding:24px;border-radius:12px;text-align:center;margin-bottom:24px">
+              <h1 style="color:#f8fafc;font-size:24px;margin:0;letter-spacing:-0.5px">🏍️ GarageBook</h1>
+            </div>
+            <h2 style="color:#1e293b;font-size:20px">Wachtwoord opnieuw instellen</h2>
+            <p style="color:#475569;line-height:1.6">Klik op de knop hieronder om een nieuw wachtwoord in te stellen. Deze link is 1 uur geldig.</p>
+            <div style="text-align:center;margin:32px 0">
+              <a href="${resetUrl}" style="background:linear-gradient(135deg,#f97316,#dc2626);color:white;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:16px;display:inline-block">
+                Wachtwoord opnieuw instellen
+              </a>
+            </div>
+            <p style="color:#94a3b8;font-size:13px">Als je dit niet hebt aangevraagd, kun je deze e-mail negeren.</p>
+            <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
+            <p style="color:#cbd5e1;font-size:12px">Of kopieer deze link: <a href="${resetUrl}" style="color:#f97316">${resetUrl}</a></p>
+          </div>`
+      });
+    } catch(e) {
+      console.error('[RESET] E-mail fout:', e.message);
+    }
+    res.json({ ok: true });
+});
+
+// POST /api/auth/reset-password
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { token, password } = req.body;
+  if (!token || !password) return res.status(400).json({ error: 'Token en wachtwoord zijn verplicht.' });
+  if (password.length < 6) return res.status(400).json({ error: 'Wachtwoord minimaal 6 tekens.' });
+
+  const reset = db.prepare('SELECT * FROM password_resets WHERE token=? AND used=0').get(token);
+  if (!reset) return res.status(400).json({ error: 'Ongeldige of verlopen reset link.' });
+  if (new Date(reset.expires_at) < new Date()) {
+    db.prepare('DELETE FROM password_resets WHERE token=?').run(token);
+    return res.status(400).json({ error: 'Reset link is verlopen. Vraag een nieuwe aan.' });
+  }
+
+  const hash = await bcrypt.hash(password, 12);
+  db.prepare('UPDATE users SET password_hash=? WHERE id=?').run(hash, reset.user_id);
+  db.prepare('UPDATE password_resets SET used=1 WHERE token=?').run(token);
+  res.json({ ok: true });
+});
+
+// GET /api/admin/smtp
+app.get('/api/admin/smtp', requireAdmin, (req, res) => {
+  res.json({
+    smtp_host: process.env.SMTP_HOST || '',
+    smtp_port: process.env.SMTP_PORT || '587',
+    smtp_user: process.env.SMTP_USER || '',
+    smtp_configured: !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
+    app_url: process.env.APP_URL || '',
+    smtp_from_name: process.env.SMTP_FROM_NAME || 'GarageBook'
+  });
+});
+
+// POST /api/admin/smtp
+app.post('/api/admin/smtp', requireAdmin, (req, res) => {
+  const { smtp_host, smtp_port, smtp_user, smtp_pass, app_url, smtp_from_name } = req.body;
+  const envPath = '/etc/garagebook.env';
+  try {
+    let env = '';
+    try { env = fs.readFileSync(envPath, 'utf8'); } catch {}
+    const updates = {
+      SMTP_HOST: smtp_host || '',
+      SMTP_PORT: smtp_port || '587',
+      SMTP_USER: smtp_user || '',
+      SMTP_PASS: smtp_pass || '',
+      APP_URL: app_url || '',
+      SMTP_FROM_NAME: smtp_from_name || 'GarageBook'
+    };
+    for (const [k, v] of Object.entries(updates)) {
+      if (env.includes(`${k}=`)) env = env.replace(new RegExp(`${k}=.*`), `${k}=${v}`);
+      else env += `\n${k}=${v}`;
+      if (v) process.env[k] = v;
+    }
+    fs.writeFileSync(envPath, env.trim() + '\n');
+    res.json({ ok: true });
+  } catch(e) { res.status(500).json({ error: e.message }); }
+});
+
+// GET /api/admin/resets — open reset tokens tonen
+app.get('/api/admin/resets', requireAdmin, (req, res) => {
+  const resets = db.prepare(`
+    SELECT r.token, r.expires_at, r.created_at, u.naam, u.email
+    FROM password_resets r JOIN users u ON u.id=r.user_id
+    WHERE r.used=0 AND r.expires_at > datetime('now')
+    ORDER BY r.created_at DESC
+  `).all();
+  res.json(resets);
+});

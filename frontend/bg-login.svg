@@ -1,0 +1,219 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <!-- Achtergrond gradiënt - nacht sfeer -->
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#020409"/>
+      <stop offset="40%" stop-color="#0a0f1e"/>
+      <stop offset="100%" stop-color="#0f1a2e"/>
+    </linearGradient>
+    <!-- Weg gradiënt -->
+    <linearGradient id="road" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0d1117"/>
+      <stop offset="100%" stop-color="#1a2030"/>
+    </linearGradient>
+    <!-- Koplamp licht cone -->
+    <radialGradient id="headlight" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#f97316" stop-opacity="0.6"/>
+      <stop offset="40%" stop-color="#f97316" stop-opacity="0.15"/>
+      <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Gloed motorfiets -->
+    <radialGradient id="bikeGlow" cx="50%" cy="60%" r="50%">
+      <stop offset="0%" stop-color="#f97316" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Ster filter -->
+    <filter id="starBlur">
+      <feGaussianBlur stdDeviation="0.5"/>
+    </filter>
+    <!-- Glans filter -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+    <!-- Weg licht -->
+    <linearGradient id="roadLight" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#f97316" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Achtergrond lucht -->
+  <rect width="1440" height="900" fill="url(#sky)"/>
+
+  <!-- Sterren -->
+  <g filter="url(#starBlur)" opacity="0.8">
+    <circle cx="120" cy="80" r="1" fill="white" opacity="0.9"/>
+    <circle cx="280" cy="45" r="1.5" fill="white" opacity="0.7"/>
+    <circle cx="420" cy="120" r="1" fill="white" opacity="0.8"/>
+    <circle cx="580" cy="60" r="1.2" fill="white" opacity="0.6"/>
+    <circle cx="720" cy="90" r="1" fill="white" opacity="0.9"/>
+    <circle cx="890" cy="40" r="1.5" fill="white" opacity="0.7"/>
+    <circle cx="1050" cy="110" r="1" fill="white" opacity="0.8"/>
+    <circle cx="1200" cy="70" r="1.2" fill="white" opacity="0.6"/>
+    <circle cx="200" cy="160" r="0.8" fill="white" opacity="0.5"/>
+    <circle cx="450" cy="30" r="1" fill="white" opacity="0.8"/>
+    <circle cx="650" cy="150" r="0.8" fill="white" opacity="0.6"/>
+    <circle cx="850" cy="180" r="1" fill="white" opacity="0.7"/>
+    <circle cx="1100" cy="50" r="0.8" fill="white" opacity="0.5"/>
+    <circle cx="1350" cy="130" r="1" fill="white" opacity="0.8"/>
+    <circle cx="50" cy="200" r="0.8" fill="white" opacity="0.4"/>
+    <circle cx="780" cy="30" r="1" fill="white" opacity="0.9"/>
+    <circle cx="1300" cy="85" r="1.2" fill="white" opacity="0.6"/>
+    <circle cx="950" cy="160" r="0.8" fill="white" opacity="0.5"/>
+    <circle cx="330" cy="190" r="1" fill="white" opacity="0.7"/>
+    <circle cx="1180" cy="170" r="0.8" fill="white" opacity="0.4"/>
+  </g>
+
+  <!-- Bergen/horizon silhouet rechts -->
+  <path d="M800 520 L950 350 L1050 430 L1150 300 L1280 420 L1440 380 L1440 520Z" fill="#08101e" opacity="0.9"/>
+  <path d="M1000 520 L1150 360 L1280 440 L1440 390 L1440 520Z" fill="#060c18" opacity="0.95"/>
+
+  <!-- Verre stadslichten horizon -->
+  <g opacity="0.4">
+    <rect x="820" y="465" width="2" height="6" fill="#f97316" rx="1"/>
+    <rect x="850" y="460" width="2" height="8" fill="#fbbf24" rx="1"/>
+    <rect x="880" y="468" width="2" height="5" fill="#f97316" rx="1"/>
+    <rect x="920" y="462" width="2" height="7" fill="#fbbf24" rx="1"/>
+    <rect x="960" y="465" width="2" height="6" fill="#f97316" rx="1"/>
+    <rect x="1000" y="458" width="2" height="9" fill="#fbbf24" rx="1"/>
+    <rect x="1040" y="465" width="2" height="6" fill="#f97316" rx="1"/>
+    <rect x="1080" y="460" width="2" height="7" fill="#fbbf24" rx="1"/>
+    <rect x="1120" y="463" width="2" height="6" fill="#f97316" rx="1"/>
+    <rect x="1160" y="457" width="2" height="8" fill="#fbbf24" rx="1"/>
+  </g>
+
+  <!-- Weg / asfalt -->
+  <path d="M0 520 L1440 520 L1440 900 L0 900Z" fill="url(#road)"/>
+
+  <!-- Wegmarkering - perspectief lijnen -->
+  <g opacity="0.15" stroke="#e2e8f0" stroke-width="2">
+    <!-- Middellijn gestippeld -->
+    <line x1="720" y1="520" x2="650" y2="700"/>
+    <line x1="650" y1="720" x2="590" y2="850"/>
+    <!-- Wegrand links -->
+    <line x1="0" y1="620" x2="580" y2="530"/>
+    <!-- Wegrand rechts -->
+    <line x1="1440" y1="620" x2="860" y2="530"/>
+  </g>
+
+  <!-- Wegmarkeringen gestippeld - perspectief -->
+  <g fill="#f1f5f9" opacity="0.12">
+    <rect x="700" y="545" width="40" height="8" rx="4"/>
+    <rect x="670" y="600" width="60" height="10" rx="5"/>
+    <rect x="635" y="660" width="90" height="12" rx="6"/>
+    <rect x="590" y="730" width="130" height="14" rx="7"/>
+    <rect x="530" y="810" width="180" height="16" rx="8"/>
+  </g>
+
+  <!-- Koplamp licht cone (vanuit motorfiets naar links) -->
+  <ellipse cx="520" cy="560" rx="280" ry="80" fill="url(#headlight)" opacity="0.6"/>
+  <ellipse cx="440" cy="600" rx="220" ry="60" fill="url(#headlight)" opacity="0.3"/>
+
+  <!-- Wegverlichting effect -->
+  <ellipse cx="680" cy="700" rx="600" ry="200" fill="url(#roadLight)" opacity="0.5"/>
+
+  <!-- MOTORFIETS silhouet — gestileerd en groot, rechts van midden -->
+  <g transform="translate(580, 440)" filter="url(#softGlow)">
+    <!-- Achterband -->
+    <circle cx="80" cy="120" r="68" fill="none" stroke="#1e293b" stroke-width="22"/>
+    <circle cx="80" cy="120" r="68" fill="none" stroke="#f97316" stroke-width="3" opacity="0.8"/>
+    <circle cx="80" cy="120" r="45" fill="none" stroke="#374151" stroke-width="8"/>
+    <circle cx="80" cy="120" r="15" fill="#f97316" opacity="0.9"/>
+    <!-- Spaakpatroon achter -->
+    <g stroke="#374151" stroke-width="2" opacity="0.6">
+      <line x1="80" y1="52" x2="80" y2="188"/>
+      <line x1="12" y1="120" x2="148" y2="120"/>
+      <line x1="32" y1="72" x2="128" y2="168"/>
+      <line x1="128" y1="72" x2="32" y2="168"/>
+    </g>
+
+    <!-- Voorband -->
+    <circle cx="290" cy="120" r="62" fill="none" stroke="#1e293b" stroke-width="20"/>
+    <circle cx="290" cy="120" r="62" fill="none" stroke="#f97316" stroke-width="2.5" opacity="0.7"/>
+    <circle cx="290" cy="120" r="42" fill="none" stroke="#374151" stroke-width="7"/>
+    <circle cx="290" cy="120" r="13" fill="#f97316" opacity="0.9"/>
+    <!-- Spaakpatroon voor -->
+    <g stroke="#374151" stroke-width="2" opacity="0.6">
+      <line x1="290" y1="58" x2="290" y2="182"/>
+      <line x1="228" y1="120" x2="352" y2="120"/>
+      <line x1="246" y1="76" x2="334" y2="164"/>
+      <line x1="334" y1="76" x2="246" y2="164"/>
+    </g>
+
+    <!-- Frame / chassislijnen -->
+    <path d="M80 120 L120 40 L180 30 L240 50 L290 80" stroke="#94a3b8" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <path d="M120 40 L140 120 L80 120" stroke="#64748b" stroke-width="4" fill="none"/>
+    <path d="M180 30 L200 120" stroke="#64748b" stroke-width="4" fill="none"/>
+    <path d="M240 50 L290 120" stroke="#94a3b8" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+    <!-- Tank -->
+    <path d="M150 25 Q200 10 250 35 L240 60 Q200 45 155 55Z" fill="#1e293b" stroke="#f97316" stroke-width="1.5" opacity="0.9"/>
+    <path d="M160 30 Q200 18 245 40" stroke="#f97316" stroke-width="1" opacity="0.5" fill="none"/>
+
+    <!-- Kuip/fairing -->
+    <path d="M230 45 Q270 30 300 60 L310 100 Q285 85 260 90 L250 70Z" fill="#111827" stroke="#374151" stroke-width="2"/>
+
+    <!-- Koplamp -->
+    <ellipse cx="312" cy="80" rx="18" ry="14" fill="#f97316" opacity="0.95"/>
+    <ellipse cx="312" cy="80" rx="12" ry="9" fill="#fef3c7" opacity="0.9"/>
+    <!-- Koplamp glans -->
+    <ellipse cx="312" cy="80" rx="18" ry="14" fill="none" stroke="#f97316" stroke-width="3" opacity="0.6" filter="url(#glow)"/>
+
+    <!-- Uitlaat -->
+    <path d="M90 140 Q60 145 40 155 Q20 162 10 170" stroke="#f97316" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.8"/>
+    <path d="M90 140 Q60 148 38 160" stroke="#fbbf24" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.4"/>
+
+    <!-- Stuurkuip -->
+    <path d="M270 40 L285 28 L295 35 L285 48Z" fill="#1e293b" stroke="#475569" stroke-width="1.5"/>
+    <line x1="285" y1="28" x2="300" y2="22" stroke="#64748b" stroke-width="3" stroke-linecap="round"/>
+    <line x1="285" y1="28" x2="300" y2="34" stroke="#64748b" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- Zadel -->
+    <path d="M155 50 Q185 38 225 48 L220 65 Q185 55 155 65Z" fill="#0f172a" stroke="#334155" stroke-width="1.5"/>
+
+    <!-- Rijder silhouet (gestroomlijnd) -->
+    <path d="M160 55 Q170 20 195 15 Q215 10 225 25 L230 55 Q210 48 185 52Z" fill="#0f172a" opacity="0.9"/>
+    <!-- Hoofd helm -->
+    <ellipse cx="198" cy="10" rx="16" ry="14" fill="#1e293b" stroke="#f97316" stroke-width="1.5"/>
+    <path d="M185 8 Q198 2 211 8" stroke="#f97316" stroke-width="1" fill="none" opacity="0.6"/>
+
+    <!-- Accentverlichting -->
+    <path d="M80 170 L200 175" stroke="#f97316" stroke-width="2" opacity="0.4" stroke-linecap="round"/>
+    <path d="M200 175 L290 165" stroke="#f97316" stroke-width="1.5" opacity="0.3" stroke-linecap="round"/>
+  </g>
+
+  <!-- Achterlicht gloed -->
+  <ellipse cx="660" cy="560" rx="30" ry="20" fill="#dc2626" opacity="0.6" filter="url(#glow)"/>
+  <ellipse cx="660" cy="560" rx="15" ry="10" fill="#ef4444" opacity="0.8"/>
+
+  <!-- Uitlaat rookwolkje -->
+  <g opacity="0.15">
+    <circle cx="595" cy="580" r="12" fill="#94a3b8"/>
+    <circle cx="575" cy="572" r="9" fill="#94a3b8"/>
+    <circle cx="558" cy="565" r="7" fill="#94a3b8"/>
+    <circle cx="544" cy="560" r="5" fill="#94a3b8"/>
+  </g>
+
+  <!-- Subtiele oranje gloed onder motorfiets (reflectie asfalt) -->
+  <ellipse cx="850" cy="590" rx="200" ry="30" fill="#f97316" opacity="0.08"/>
+
+  <!-- Overlay gradiënt rechts (voor login kaart) -->
+  <linearGradient id="rightOverlay" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#0a0f1e" stop-opacity="0"/>
+    <stop offset="60%" stop-color="#0a0f1e" stop-opacity="0.3"/>
+    <stop offset="100%" stop-color="#0a0f1e" stop-opacity="0.8"/>
+  </linearGradient>
+  <rect width="1440" height="900" fill="url(#rightOverlay)"/>
+
+  <!-- Onderste verduistering voor tekst leesbaarheid -->
+  <linearGradient id="bottomFade" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#0a0f1e" stop-opacity="0"/>
+    <stop offset="100%" stop-color="#0a0f1e" stop-opacity="0.6"/>
+  </linearGradient>
+  <rect y="600" width="1440" height="300" fill="url(#bottomFade)"/>
+</svg>

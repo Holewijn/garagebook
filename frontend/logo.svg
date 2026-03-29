@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 72" fill="none">
+  <!-- Achtergrond shield/badge vorm -->
+  <defs>
+    <linearGradient id="accentGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#dc2626"/>
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Badge/shield icoon links -->
+  <rect x="2" y="6" width="60" height="60" rx="12" fill="url(#shieldGrad)"/>
+  <rect x="2" y="6" width="60" height="60" rx="12" fill="none" stroke="url(#accentGrad)" stroke-width="1.5" opacity="0.6"/>
+
+  <!-- Motorfiets silhouet in het icoon — gestileerd en scherp -->
+  <!-- Achterwiel -->
+  <circle cx="20" cy="46" r="9" fill="none" stroke="#f97316" stroke-width="2.5"/>
+  <circle cx="20" cy="46" r="3" fill="#f97316" opacity="0.7"/>
+  <!-- Voorwiel -->
+  <circle cx="47" cy="46" r="8" fill="none" stroke="#f97316" stroke-width="2.5"/>
+  <circle cx="47" cy="46" r="3" fill="#f97316" opacity="0.7"/>
+  <!-- Frame -->
+  <path d="M20 46 L28 28 L38 28 L47 38" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M28 28 L47 38 L47 46" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Tank/zadel -->
+  <path d="M28 28 Q34 22 41 24 L38 28Z" fill="#94a3b8" opacity="0.9"/>
+  <!-- Stuur -->
+  <path d="M47 30 L52 27 M47 30 L52 33" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
+  <!-- Uitlaat -->
+  <path d="M20 46 Q16 46 14 48" stroke="#f97316" stroke-width="2" stroke-linecap="round" opacity="0.7"/>
+  <!-- Accent streep onderaan icoon -->
+  <rect x="2" y="58" width="60" height="8" rx="0 0 12 12" fill="url(#accentGrad)" opacity="0.9"/>
+  <rect x="2" y="58" width="60" height="8" fill="url(#accentGrad)"/>
+  <path d="M2 58 L62 58 L62 66 Q62 66 58 66 L6 66 Q2 66 2 66 Z" fill="url(#accentGrad)"/>
+
+  <!-- Tekst: GarageBook -->
+  <!-- G -->
+  <text x="78" y="38" font-family="'Arial Black', 'Impact', sans-serif" font-size="28" font-weight="900" letter-spacing="-0.5" fill="#f8fafc">GARAGE</text>
+  <!-- Oranje accent streep -->
+  <rect x="78" y="42" width="118" height="3" rx="1.5" fill="url(#accentGrad)"/>
+  <!-- Book tekst kleiner en lichter -->
+  <text x="78" y="60" font-family="'Arial', sans-serif" font-size="16" font-weight="400" letter-spacing="6" fill="#94a3b8">BOOK</text>
+
+  <!-- Kleine dot accent -->
+  <circle cx="132" cy="55" r="2.5" fill="url(#accentGrad)"/>
+
+  <!-- Slogan rechts (optioneel, klein) -->
+  <text x="208" y="52" font-family="'Arial', sans-serif" font-size="9" fill="#475569" letter-spacing="1">YOUR VEHICLE</text>
+  <text x="208" y="63" font-family="'Arial', sans-serif" font-size="9" fill="#475569" letter-spacing="1">HISTORY</text>
+</svg>

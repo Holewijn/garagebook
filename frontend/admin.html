@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GarageBook Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--surface2:#252836;--surface3:#2e3347;
+  --ink:#f1f5f9;--ink2:#cbd5e1;--ink3:#94a3b8;--ink4:#64748b;
+  --accent:#3b82f6;--accent-h:#2563eb;--accent-bg:rgba(59,130,246,.12);
+  --red:#ef4444;--red-bg:rgba(239,68,68,.12);
+  --green:#22c55e;--green-bg:rgba(34,197,94,.12);
+  --orange:#f97316;--orange-bg:rgba(249,115,22,.12);
+  --yellow:#eab308;--yellow-bg:rgba(234,179,8,.12);
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.12);
+  --radius:8px;--radius-lg:12px;
+  --shadow:0 4px 24px rgba(0,0,0,.3);
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.5}
+
+/* ── LOGIN ── */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:2rem;background:radial-gradient(ellipse at 50% 0%,rgba(59,130,246,.15) 0%,transparent 70%)}
+.login-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);width:min(380px,100%);padding:2rem;box-shadow:var(--shadow)}
+.login-logo{display:flex;align-items:center;gap:10px;margin-bottom:1.5rem}
+.login-logo-icon{width:40px;height:40px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.login-logo-text{font-size:20px;font-weight:700;color:var(--ink)}
+.login-logo-badge{font-size:11px;font-weight:600;background:var(--red-bg);color:var(--red);border:1px solid var(--red);padding:2px 8px;border-radius:20px;margin-left:4px}
+.login-title{font-size:22px;font-weight:700;margin-bottom:.25rem}
+.login-sub{font-size:13px;color:var(--ink3);margin-bottom:1.5rem}
+.field{margin-bottom:1rem}
+.field label{display:block;font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.field input{width:100%;padding:.65rem .875rem;background:var(--surface2);border:1.5px solid var(--border2);border-radius:var(--radius);font-size:14px;font-family:'Inter',sans-serif;color:var(--ink);outline:none;transition:border-color .15s}
+.field input:focus{border-color:var(--accent)}
+.login-error{background:var(--red-bg);border:1px solid rgba(239,68,68,.3);border-radius:var(--radius);padding:.65rem .875rem;font-size:13px;color:var(--red);margin-bottom:1rem;display:none}
+.login-error.show{display:block}
+.login-btn{width:100%;padding:.75rem;background:var(--accent);color:white;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s}
+.login-btn:hover{background:var(--accent-h)}
+.login-btn:disabled{opacity:.6;cursor:not-allowed}
+
+/* ── APP ── */
+#app-screen{display:none}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;position:sticky;top:0;z-index:100}
+.topbar-logo{font-size:16px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px}
+.topbar-logo-icon{width:28px;height:28px;background:var(--accent);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.topbar-badge{font-size:10px;font-weight:700;background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.3);padding:2px 8px;border-radius:20px}
+.topbar-right{display:flex;align-items:center;gap:.75rem}
+.topbar-version{font-size:12px;color:var(--ink4);font-family:monospace}
+.logout-btn{padding:5px 14px;border:1px solid var(--border2);border-radius:var(--radius);background:none;color:var(--ink3);font-size:12px;font-weight:500;cursor:pointer;font-family:'Inter',sans-serif;transition:all .15s}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
+
+/* ── LAYOUT ── */
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 56px)}
+
+/* ── SIDEBAR ── */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:1rem 0;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto}
+.nav-section{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);padding:.75rem 1.25rem .4rem}
+.nav-item{display:flex;align-items:center;gap:10px;padding:.6rem 1rem;cursor:pointer;color:var(--ink3);font-size:13px;font-weight:500;transition:all .15s;border:none;background:none;width:100%;text-align:left;font-family:'Inter',sans-serif;border-left:2px solid transparent}
+.nav-item:hover{background:var(--surface2);color:var(--ink)}
+.nav-item.active{background:var(--accent-bg);color:var(--accent);border-left-color:var(--accent)}
+.nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+
+/* ── MAIN ── */
+.main{padding:2rem;overflow-y:auto;min-width:0}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* ── PAGE HEADER ── */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:1rem}
+.page-title{font-size:20px;font-weight:700;color:var(--ink)}
+.page-sub{font-size:13px;color:var(--ink3);margin-top:3px}
+
+/* ── STAT CARDS ── */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.875rem;margin-bottom:1.75rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;position:relative;overflow:hidden}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat-card.blue::before{background:var(--accent)}
+.stat-card.green::before{background:var(--green)}
+.stat-card.orange::before{background:var(--orange)}
+.stat-card.red::before{background:var(--red)}
+.stat-card.yellow::before{background:var(--yellow)}
+.stat-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--ink4);margin-bottom:.375rem}
+.stat-value{font-size:26px;font-weight:700;color:var(--ink);letter-spacing:-.5px;line-height:1}
+.stat-delta{font-size:12px;color:var(--ink4);margin-top:.25rem}
+
+/* ── SECTION ── */
+.section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:1.25rem;overflow:hidden}
+.section-head{display:flex;align-items:center;justify-content:space-between;padding:.875rem 1.25rem;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:.5rem}
+.section-title{font-size:14px;font-weight:600;color:var(--ink)}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:.6rem 1.25rem;font-size:10px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:var(--ink4);border-bottom:1px solid var(--border);background:var(--surface2)}
+td{padding:.75rem 1.25rem;border-bottom:1px solid var(--border);color:var(--ink2);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface2)}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:.5rem 1rem;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;border:1px solid var(--border2);background:var(--surface2);color:var(--ink2);font-family:'Inter',sans-serif}
+.btn:hover{background:var(--surface3);color:var(--ink)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:white}
+.btn-primary:hover{background:var(--accent-h)}
+.btn-danger{background:var(--red-bg);border-color:rgba(239,68,68,.3);color:var(--red)}
+.btn-danger:hover{background:rgba(239,68,68,.2)}
+.btn-success{background:var(--green-bg);border-color:rgba(34,197,94,.3);color:var(--green)}
+.btn-success:hover{background:rgba(34,197,94,.2)}
+.btn-sm{padding:.35rem .75rem;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── BADGES ── */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-blue{background:var(--accent-bg);color:var(--accent)}
+.badge-green{background:var(--green-bg);color:var(--green)}
+.badge-red{background:var(--red-bg);color:var(--red)}
+.badge-gray{background:var(--surface2);color:var(--ink3)}
+
+/* ── MODAL ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-lg);width:min(520px,100%);max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.5)}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:1.125rem 1.5rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--surface);z-index:1;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.modal-title{font-size:16px;font-weight:700;color:var(--ink)}
+.modal-close{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius);border:1px solid var(--border2);background:none;cursor:pointer;font-size:16px;color:var(--ink3);transition:all .15s}
+.modal-close:hover{background:var(--surface2)}
+.modal-body{padding:1.5rem}
+.modal-foot{display:flex;justify-content:flex-end;gap:.75rem;padding:1rem 1.5rem;border-top:1px solid var(--border);background:var(--surface2);border-radius:0 0 var(--radius-lg) var(--radius-lg);position:sticky;bottom:0}
+.form-group{margin-bottom:1rem}
+.form-group label{display:block;font-size:11px;font-weight:600;color:var(--ink3);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.form-group input,.form-group select{width:100%;padding:.6rem .875rem;background:var(--surface2);border:1.5px solid var(--border2);border-radius:var(--radius);font-size:14px;font-family:'Inter',sans-serif;color:var(--ink);outline:none;transition:border-color .15s}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+.form-group .hint{font-size:11px;color:var(--ink4);margin-top:4px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+
+/* ── BACKUP ITEMS ── */
+.backup-item{display:flex;align-items:center;gap:1rem;padding:.875rem 1.25rem;border-bottom:1px solid var(--border)}
+.backup-item:last-child{border-bottom:none}
+.backup-icon{font-size:20px;flex-shrink:0}
+.backup-info{flex:1;min-width:0}
+.backup-naam{font-weight:500;font-size:13px;color:var(--ink);font-family:monospace}
+.backup-meta{font-size:12px;color:var(--ink4);margin-top:2px}
+.backup-actions{display:flex;gap:.5rem;flex-shrink:0}
+
+/* ── USER DETAIL ── */
+.user-detail-section{margin-bottom:1.5rem}
+.user-detail-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--ink4);margin-bottom:.75rem;padding-bottom:.375rem;border-bottom:1px solid var(--border)}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.info-item{background:var(--surface2);border-radius:var(--radius);padding:.75rem}
+.info-item-label{font-size:11px;color:var(--ink4);margin-bottom:3px}
+.info-item-value{font-size:14px;font-weight:600;color:var(--ink)}
+
+/* ── INSTELLINGEN ── */
+.setting-row{padding:1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.setting-row:last-child{border-bottom:none}
+.setting-info{flex:1;min-width:200px}
+.setting-title{font-weight:600;font-size:14px;color:var(--ink);margin-bottom:3px}
+.setting-desc{font-size:12px;color:var(--ink4);line-height:1.5}
+.setting-control{display:flex;align-items:center;gap:.75rem;flex-shrink:0}
+
+/* ── STATUS DOT ── */
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block}
+.status-dot.green{background:var(--green)}
+.status-dot.red{background:var(--red)}
+.status-dot.yellow{background:var(--yellow)}
+
+/* ── UPTIME ── */
+.uptime-bar{display:flex;gap:2px;margin-top:.75rem}
+.uptime-seg{height:20px;border-radius:2px;flex:1;background:var(--green-bg)}
+
+/* ── ACTIVITY LOG ── */
+.activity-item{display:flex;gap:.875rem;padding:.75rem 1.25rem;border-bottom:1px solid var(--border);font-size:13px;align-items:flex-start}
+.activity-item:last-child{border-bottom:none}
+.activity-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.activity-body{flex:1}
+.activity-time{font-size:11px;color:var(--ink4);margin-top:2px}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface);border:1px solid var(--border2);color:var(--ink);padding:.75rem 1.25rem;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:999;opacity:0;transform:translateY(6px);transition:all .25s;pointer-events:none;max-width:320px;box-shadow:var(--shadow)}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.ok{border-color:rgba(34,197,94,.4);color:var(--green)}
+#toast.err{border-color:rgba(239,68,68,.4);color:var(--red)}
+
+/* ── SPINNER ── */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── SEARCH ── */
+.search-box{padding:.55rem .875rem;background:var(--surface2);border:1.5px solid var(--border2);border-radius:var(--radius);font-size:13px;font-family:'Inter',sans-serif;color:var(--ink);outline:none;width:240px;transition:border-color .15s}
+.search-box:focus{border-color:var(--accent)}
+
+@media(max-width:768px){
+  .layout{grid-template-columns:1fr}
+  .sidebar{position:static;height:auto;display:flex;flex-wrap:wrap;flex-direction:row;gap:0}
+  .nav-item{width:auto;border-left:none;border-bottom:2px solid transparent}
+  .nav-item.active{border-bottom-color:var(--accent);border-left:none}
+  .main{padding:1rem}
+  .form-row{grid-template-columns:1fr}
+  .info-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">🏍️</div>
+      <div class="login-logo-text">GarageBook</div>
+      <div class="login-logo-badge">ADMIN</div>
+    </div>
+    <div class="login-title">Beheerportaal</div>
+    <div class="login-sub">Log in met het admin wachtwoord uit je <code>.env</code></div>
+    <div class="login-error" id="login-error"></div>
+    <div class="field"><label>Admin wachtwoord</label><input type="password" id="login-pw" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Inloggen</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-logo-icon">🏍️</div>
+      GarageBook
+      <div class="topbar-badge">ADMIN</div>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-version" id="topbar-version"></span>
+      <a href="/" style="color:var(--ink4);font-size:12px;text-decoration:none">← Naar app</a>
+      <button class="logout-btn" onclick="doLogout()">Uitloggen</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="sidebar">
+      <div class="nav-section">Beheer</div>
+      <button class="nav-item active" onclick="switchTab('dashboard',this)"><span class="nav-icon">📊</span> Dashboard</button>
+      <button class="nav-item" onclick="switchTab('gebruikers',this)"><span class="nav-icon">👥</span> Gebruikers</button>
+      <button class="nav-item" onclick="switchTab('backups',this)"><span class="nav-icon">💾</span> Backups</button>
+      <div class="nav-section">Systeem</div>
+      <button class="nav-item" onclick="switchTab('instellingen',this)"><span class="nav-icon">⚙️</span> Instellingen</button>
+    </div>
+
+    <div class="main">
+
+      <!-- DASHBOARD -->
+      <div id="tab-dashboard" class="tab-content active">
+        <div class="page-header">
+          <div><div class="page-title">Dashboard</div><div class="page-sub" id="dash-uptime"></div></div>
+          <button class="btn btn-primary" onclick="loadAll()">↻ Vernieuwen</button>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-card blue"><div class="stat-label">Gebruikers</div><div class="stat-value" id="s-users">—</div><div class="stat-delta">Geregistreerd</div></div>
+          <div class="stat-card green"><div class="stat-label">Motoren</div><div class="stat-value" id="s-bikes">—</div><div class="stat-delta">Totaal</div></div>
+          <div class="stat-card orange"><div class="stat-label">Logboekitems</div><div class="stat-value" id="s-log">—</div></div>
+          <div class="stat-card yellow"><div class="stat-label">Upgrades</div><div class="stat-value" id="s-up">—</div></div>
+          <div class="stat-card red"><div class="stat-label">Herinneringen</div><div class="stat-value" id="s-her">—</div></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.25rem;margin-bottom:1.25rem">
+          <div class="section">
+            <div class="section-head"><span class="section-title">💾 Opslag</span></div>
+            <div style="padding:1.25rem;display:flex;flex-direction:column;gap:.75rem">
+              <div style="display:flex;justify-content:space-between;font-size:13px">
+                <span style="color:var(--ink3)">Database</span>
+                <span style="font-weight:600" id="s-dbsize">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:13px">
+                <span style="color:var(--ink3)">Foto's</span>
+                <span style="font-weight:600" id="s-uploadsize">—</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:13px">
+                <span style="color:var(--ink3)">Aantal foto's</span>
+                <span style="font-weight:600" id="s-uploadcount">—</span>
+              </div>
+            </div>
+          </div>
+          <div class="section">
+            <div class="section-head"><span class="section-title">🟢 Systeemstatus</span></div>
+            <div style="padding:1.25rem;display:flex;flex-direction:column;gap:.75rem">
+              <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px">
+                <span style="color:var(--ink3)">API server</span>
+                <span style="display:flex;align-items:center;gap:6px;font-weight:600;color:var(--green)"><span class="status-dot green"></span>Online</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px">
+                <span style="color:var(--ink3)">Anthropic AI</span>
+                <span id="ai-status" style="display:flex;align-items:center;gap:6px;font-weight:600">—</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px">
+                <span style="color:var(--ink3)">Versie</span>
+                <span style="font-weight:600;font-family:monospace" id="s-versie">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head"><span class="section-title">📈 Registraties (laatste 6 maanden)</span></div>
+          <div style="padding:1.25rem" id="registratie-grafiek"></div>
+        </div>
+      </div>
+
+      <!-- GEBRUIKERS -->
+      <div id="tab-gebruikers" class="tab-content">
+        <div class="page-header">
+          <div><div class="page-title">Gebruikers</div><div class="page-sub" id="users-count"></div></div>
+          <input class="search-box" type="text" placeholder="🔍  Zoeken op naam of e-mail..." oninput="filterUsers(this.value)">
+        </div>
+        <div class="section">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Naam</th><th>E-mail</th><th>Geregistreerd</th><th>Motoren</th><th>Items</th><th>Acties</th></tr></thead>
+              <tbody id="users-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- BACKUPS -->
+      <div id="tab-backups" class="tab-content">
+        <div class="page-header">
+          <div><div class="page-title">Backups</div><div class="page-sub">Dagelijks automatisch om 03:00 — 14 dagen bewaard</div></div>
+          <button class="btn btn-success" id="backup-now-btn" onclick="createBackup()">💾 Nu een backup maken</button>
+        </div>
+        <div class="section">
+          <div class="section-head"><span class="section-title">Beschikbare backups</span><span id="backup-count" style="font-size:12px;color:var(--ink4)"></span></div>
+          <div id="backup-lijst"></div>
+        </div>
+      </div>
+
+      <!-- INSTELLINGEN -->
+      <div id="tab-instellingen" class="tab-content">
+        <div class="page-header">
+          <div><div class="page-title">Instellingen</div><div class="page-sub">Systeem- en API-configuratie</div></div>
+        </div>
+        <div class="section">
+          <div class="section-head"><span class="section-title">🤖 Anthropic AI</span></div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title">Anthropic API Key</div>
+              <div class="setting-desc">Vereist voor de AI onderhoudsintervallen functie. Haal een key op via <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>. Gratis $5 tegoed bij registratie.</div>
+              <div style="margin-top:.75rem;display:flex;align-items:center;gap:.75rem">
+                <span id="api-key-status"></span>
+                <span id="api-key-preview" style="font-family:monospace;font-size:12px;color:var(--ink4)"></span>
+              </div>
+            </div>
+            <div class="setting-control">
+              <button class="btn btn-primary btn-sm" onclick="openModal('api-key')">🔑 Key instellen</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title">Datadirectory</div>
+              <div class="setting-desc">Locatie van de database en uploads op de server.</div>
+              <code style="font-size:12px;color:var(--ink3);margin-top:.5rem;display:block" id="s-datadir"></code>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title">Poort</div>
+              <div class="setting-desc">Interne poort waarop de Node.js server luistert.</div>
+              <code style="font-size:12px;color:var(--ink3);margin-top:.5rem;display:block" id="s-port"></code>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-head"><span class="section-title">🔐 Admin wachtwoord wijzigen</span></div>
+          <div class="setting-row">
+            <div class="setting-info">
+              <div class="setting-title">Wachtwoord</div>
+              <div class="setting-desc">Het admin wachtwoord staat in <code>/etc/garagebook.env</code> als <code>ADMIN_PASSWORD</code>. Wijzig het daar en herstart de service.</div>
+            </div>
+            <div class="setting-control">
+              <button class="btn btn-sm" onclick="toast('Pas ADMIN_PASSWORD aan in /etc/garagebook.env en herstart de service.','ok')">ℹ️ Instructies</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Gebruiker bewerken -->
+<div class="modal-overlay" id="modal-edit-user">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" id="edit-user-title">Gebruiker bewerken</div><button class="modal-close" onclick="closeModal('edit-user')">×</button></div>
+    <div class="modal-body">
+      <input type="hidden" id="eu-id">
+      <div class="form-row">
+        <div class="form-group"><label>Naam</label><input type="text" id="eu-naam" placeholder="Naam"></div>
+        <div class="form-group"><label>E-mailadres</label><input type="email" id="eu-email" placeholder="email@adres.nl"></div>
+      </div>
+      <div class="form-group">
+        <label>Nieuw wachtwoord</label>
+        <input type="password" id="eu-pw" placeholder="Leeg laten = niet wijzigen">
+        <div class="hint">Minimaal 6 tekens. Leeg laten om het wachtwoord ongewijzigd te laten.</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-danger btn-sm" onclick="deleteUser(document.getElementById('eu-id').value)">Gebruiker verwijderen</button>
+      <div style="flex:1"></div>
+      <button class="btn" onclick="closeModal('edit-user')">Annuleren</button>
+      <button class="btn btn-primary" onclick="saveUser()">Opslaan</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Gebruiker detail -->
+<div class="modal-overlay" id="modal-user-detail">
+  <div class="modal" style="width:min(680px,100%)">
+    <div class="modal-head"><div class="modal-title" id="detail-title">Gebruiker detail</div><button class="modal-close" onclick="closeModal('user-detail')">×</button></div>
+    <div class="modal-body" id="detail-body"></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal('user-detail')">Sluiten</button></div>
+  </div>
+</div>
+
+<!-- MODAL: API Key -->
+<div class="modal-overlay" id="modal-api-key">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">🔑 Anthropic API Key instellen</div><button class="modal-close" onclick="closeModal('api-key')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>API Key</label>
+        <input type="password" id="ak-key" placeholder="sk-ant-...">
+        <div class="hint">Haal een key op via <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent)">console.anthropic.com</a>. De key wordt opgeslagen in <code>/etc/garagebook.env</code> en direct actief.</div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" onclick="closeModal('api-key')">Annuleren</button>
+      <button class="btn btn-primary" onclick="saveApiKey()">Opslaan & activeren</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let TOKEN = sessionStorage.getItem('admin_token');
+let allUsers = [];
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (TOKEN) opts.headers['Authorization'] = 'Bearer ' + TOKEN;
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch('/api/admin' + path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Fout opgetreden.');
+  return data;
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'show ' + type;
+  clearTimeout(el._t); el._t = setTimeout(() => el.className='', 3500);
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const pw = document.getElementById('login-pw').value;
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+  err.classList.remove('show');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Inloggen...';
+  try {
+    const r = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error);
+    TOKEN = data.token;
+    sessionStorage.setItem('admin_token', TOKEN);
+    bootApp();
+  } catch(e) {
+    err.textContent = e.message; err.classList.add('show');
+  } finally { btn.disabled = false; btn.textContent = 'Inloggen'; }
+}
+
+function doLogout() {
+  TOKEN = null; sessionStorage.removeItem('admin_token');
+  document.getElementById('app-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-pw').value = '';
+}
+
+async function bootApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  await loadAll();
+}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+// ── MODALS ────────────────────────────────────────────────────────────────────
+function openModal(id) { document.getElementById('modal-' + id).classList.add('open'); }
+function closeModal(id) { document.getElementById('modal-' + id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
+
+// ── LOAD ALL ──────────────────────────────────────────────────────────────────
+async function loadAll() {
+  await Promise.all([loadStats(), loadUsers(), loadBackups(), loadSettings()]);
+}
+
+// ── STATS ─────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const s = await api('GET', '/stats');
+
+    document.getElementById('s-users').textContent = s.users;
+    document.getElementById('s-bikes').textContent = s.bikes;
+    document.getElementById('s-log').textContent = s.logboek;
+    document.getElementById('s-up').textContent = s.upgrades;
+    document.getElementById('s-her').textContent = s.herinneringen;
+    document.getElementById('s-dbsize').textContent = fmtBytes(s.dbSize);
+    document.getElementById('s-uploadsize').textContent = fmtBytes(s.uploadSize);
+    document.getElementById('s-uploadcount').textContent = s.uploadCount + ' bestanden';
+    document.getElementById('s-versie').textContent = 'v' + s.versie;
+    document.getElementById('topbar-version').textContent = 'v' + s.versie;
+
+    const uptime = fmtUptime(s.uptime);
+    document.getElementById('dash-uptime').textContent = 'Server uptime: ' + uptime;
+
+    renderRegistratieGrafiek(s.registraties);
+  } catch(e) { toast('Stats laden mislukt: ' + e.message, 'err'); }
+}
+
+function fmtBytes(b) {
+  if (!b) return '0 B';
+  const units = ['B','KB','MB','GB'];
+  let i = 0; let v = b;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return v.toFixed(1) + ' ' + units[i];
+}
+
+function fmtUptime(s) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  return h > 0 ? `${h}u ${m}m` : `${m}m`;
+}
+
+function renderRegistratieGrafiek(data) {
+  const el = document.getElementById('registratie-grafiek');
+  if (!data || !data.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--ink4);padding:1rem;font-size:13px">Nog geen data</div>';
+    return;
+  }
+  const max = Math.max(...data.map(d => d.aantal), 1);
+  el.innerHTML = `
+    <div style="display:flex;align-items:flex-end;gap:12px;height:80px;margin-bottom:8px">
+      ${data.map(d => `
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
+          <div style="font-size:11px;color:var(--ink3);font-weight:600">${d.aantal}</div>
+          <div style="width:100%;border-radius:4px 4px 0 0;min-height:4px;height:${Math.round((d.aantal/max)*56)+4}px;background:var(--accent);opacity:.8"></div>
+        </div>`).join('')}
+    </div>
+    <div style="display:flex;gap:12px">
+      ${data.map(d => `<div style="flex:1;text-align:center;font-size:11px;color:var(--ink4)">${d.maand.slice(5)}</div>`).join('')}
+    </div>`;
+}
+
+// ── USERS ─────────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  try {
+    allUsers = await api('GET', '/users');
+    renderUsers(allUsers);
+    document.getElementById('users-count').textContent = allUsers.length + ' gebruikers';
+  } catch(e) { toast('Gebruikers laden mislukt: ' + e.message, 'err'); }
+}
+
+function fmtDate(d) { if (!d) return '—'; return new Date(d).toLocaleDateString('nl-NL', { day:'2-digit', month:'short', year:'numeric' }); }
+
+function renderUsers(users) {
+  document.getElementById('users-tbody').innerHTML = users.length ? users.map(u => `
+    <tr>
+      <td>
+        <div style="font-weight:600;color:var(--ink)">${u.naam}</div>
+      </td>
+      <td style="font-family:monospace;font-size:12px;color:var(--ink3)">${u.email}</td>
+      <td style="font-size:12px;color:var(--ink4)">${fmtDate(u.created_at)}</td>
+      <td><span class="badge badge-blue">${u.bikes} motor${u.bikes !== 1 ? 'en' : ''}</span></td>
+      <td style="font-size:12px;color:var(--ink3)">${u.logboek + u.upgrades} items</td>
+      <td>
+        <div style="display:flex;gap:.5rem">
+          <button class="btn btn-sm" onclick="openUserDetail(${u.id})">👁 Detail</button>
+          <button class="btn btn-sm" onclick="openEditUser(${u.id})">✏️ Bewerk</button>
+        </div>
+      </td>
+    </tr>`).join('') :
+    '<tr><td colspan="6" style="text-align:center;padding:2rem;color:var(--ink4)">Geen gebruikers gevonden</td></tr>';
+}
+
+function filterUsers(q) {
+  const filtered = q ? allUsers.filter(u =>
+    u.naam.toLowerCase().includes(q.toLowerCase()) ||
+    u.email.toLowerCase().includes(q.toLowerCase())
+  ) : allUsers;
+  renderUsers(filtered);
+}
+
+function openEditUser(id) {
+  const u = allUsers.find(x => x.id === id);
+  if (!u) return;
+  document.getElementById('eu-id').value = u.id;
+  document.getElementById('eu-naam').value = u.naam;
+  document.getElementById('eu-email').value = u.email;
+  document.getElementById('eu-pw').value = '';
+  document.getElementById('edit-user-title').textContent = 'Bewerken: ' + u.naam;
+  openModal('edit-user');
+}
+
+async function saveUser() {
+  const id = document.getElementById('eu-id').value;
+  const body = {
+    naam: document.getElementById('eu-naam').value.trim(),
+    email: document.getElementById('eu-email').value.trim(),
+    password: document.getElementById('eu-pw').value || undefined
+  };
+  try {
+    await api('PUT', '/users/' + id, body);
+    closeModal('edit-user');
+    await loadUsers();
+    toast('Gebruiker bijgewerkt.');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function deleteUser(id) {
+  const u = allUsers.find(x => x.id == id);
+  if (!confirm(`Gebruiker "${u?.naam}" en alle bijbehorende data permanent verwijderen?`)) return;
+  try {
+    await api('DELETE', '/users/' + id);
+    closeModal('edit-user');
+    await loadUsers();
+    await loadStats();
+    toast('Gebruiker verwijderd.');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function openUserDetail(id) {
+  document.getElementById('detail-body').innerHTML = '<div style="text-align:center;padding:2rem;color:var(--ink4)">Laden...</div>';
+  openModal('user-detail');
+  try {
+    const data = await api('GET', '/users/' + id);
+    const u = data.user;
+    document.getElementById('detail-title').textContent = u.naam;
+    const totaalKosten = [...data.logboek, ...data.upgrades].reduce((s, i) => s + (i.kosten || 0), 0);
+    document.getElementById('detail-body').innerHTML = `
+      <div class="user-detail-section">
+        <div class="user-detail-label">Accountgegevens</div>
+        <div class="info-grid">
+          <div class="info-item"><div class="info-item-label">Naam</div><div class="info-item-value">${u.naam}</div></div>
+          <div class="info-item"><div class="info-item-label">E-mail</div><div class="info-item-value" style="font-family:monospace;font-size:13px">${u.email}</div></div>
+          <div class="info-item"><div class="info-item-label">Geregistreerd</div><div class="info-item-value">${fmtDate(u.created_at)}</div></div>
+          <div class="info-item"><div class="info-item-label">Totale kosten</div><div class="info-item-value" style="color:var(--accent)">€${totaalKosten.toLocaleString('nl-NL')}</div></div>
+        </div>
+      </div>
+      <div class="user-detail-section">
+        <div class="user-detail-label">Motoren (${data.bikes.length})</div>
+        ${data.bikes.length ? data.bikes.map(b => `
+          <div style="display:flex;align-items:center;gap:.75rem;padding:.65rem 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:20px">${b.icon}</span>
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:13px">${b.merk} ${b.model}</div>
+              <div style="font-size:12px;color:var(--ink4)">${b.jaar}${b.kenteken ? ' · ' + b.kenteken : ''} · ${b.km.toLocaleString('nl-NL')} km</div>
+            </div>
+            <div style="font-size:12px;color:var(--ink3)">
+              ${data.logboek.filter(l => l.bike_id === b.id).length} beurten ·
+              ${data.upgrades.filter(up => up.bike_id === b.id).length} upgrades
+            </div>
+          </div>`).join('') :
+          '<div style="color:var(--ink4);font-size:13px;padding:.5rem 0">Geen motoren</div>'
+        }
+      </div>`;
+  } catch(e) {
+    document.getElementById('detail-body').innerHTML = `<div style="color:var(--red);padding:1rem">${e.message}</div>`;
+  }
+}
+
+// ── BACKUPS ───────────────────────────────────────────────────────────────────
+async function loadBackups() {
+  try {
+    const backups = await api('GET', '/backups');
+    document.getElementById('backup-count').textContent = backups.length + ' backup(s)';
+    document.getElementById('backup-lijst').innerHTML = backups.length ? backups.map(b => `
+      <div class="backup-item">
+        <div class="backup-icon">🗜️</div>
+        <div class="backup-info">
+          <div class="backup-naam">${b.naam}</div>
+          <div class="backup-meta">${fmtDate(b.datum)} · ${fmtBytes(b.grootte)}</div>
+        </div>
+        <div class="backup-actions">
+          <a href="/api/admin/backups/${encodeURIComponent(b.naam)}/download?token=${TOKEN}" class="btn btn-sm btn-success" download>⬇ Download</a>
+          <button class="btn btn-sm btn-danger" onclick="deleteBackup('${b.naam}')">🗑</button>
+        </div>
+      </div>`).join('') :
+      '<div style="text-align:center;padding:2rem;color:var(--ink4);font-size:13px">Geen backups gevonden. Maak een backup aan via de knop hierboven.</div>';
+  } catch(e) { toast('Backups laden mislukt: ' + e.message, 'err'); }
+}
+
+async function createBackup() {
+  const btn = document.getElementById('backup-now-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Backup maken...';
+  try {
+    await api('POST', '/backups/create');
+    await loadBackups();
+    toast('Backup aangemaakt!', 'ok');
+  } catch(e) { toast(e.message, 'err'); }
+  finally { btn.disabled = false; btn.textContent = '💾 Nu een backup maken'; }
+}
+
+async function deleteBackup(naam) {
+  if (!confirm(`Backup "${naam}" verwijderen?`)) return;
+  try {
+    await api('DELETE', '/backups/' + encodeURIComponent(naam));
+    await loadBackups();
+    toast('Backup verwijderd.');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+// ── INSTELLINGEN ──────────────────────────────────────────────────────────────
+async function loadSettings() {
+  try {
+    const s = await api('GET', '/settings');
+    const statusEl = document.getElementById('api-key-status');
+    const previewEl = document.getElementById('api-key-preview');
+    const aiStatusEl = document.getElementById('ai-status');
+    const portEl = document.getElementById('s-port');
+    const datadirEl = document.getElementById('s-datadir');
+    if (portEl) portEl.textContent = s.port;
+    if (datadirEl) datadirEl.textContent = s.data_dir;
+    if (s.anthropic_key_set) {
+      statusEl.innerHTML = '<span class="badge badge-green">✓ Ingesteld</span>';
+      previewEl.textContent = s.anthropic_key_preview;
+      aiStatusEl.innerHTML = '<span class="status-dot green"></span><span style="color:var(--green)">Actief</span>';
+    } else {
+      statusEl.innerHTML = '<span class="badge badge-red">✗ Niet ingesteld</span>';
+      previewEl.textContent = '';
+      aiStatusEl.innerHTML = '<span class="status-dot red"></span><span style="color:var(--red)">Geen API key</span>';
+    }
+  } catch(e) { console.error('Settings laden:', e.message); }
+}
+
+async function saveApiKey() {
+  const key = document.getElementById('ak-key').value.trim();
+  if (!key) return toast('Vul een API key in.', 'err');
+  try {
+    await api('POST', '/settings', { anthropic_api_key: key });
+    closeModal('api-key');
+    document.getElementById('ak-key').value = '';
+    await loadSettings();
+    toast('API key opgeslagen en actief!', 'ok');
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+// ── DOWNLOAD MET AUTH ─────────────────────────────────────────────────────────
+// Herschrijf download links zodat ze het token meegeven als query param
+// Backend hoeft dit te ondersteunen — we voegen dat hieronder toe
+
+// ── KEYBOARD ──────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin();
+});
+
+// ── BOOT ──────────────────────────────────────────────────────────────────────
+(async () => {
+  if (TOKEN) { try { await bootApp(); } catch { doLogout(); } }
+  else document.getElementById('login-screen').style.display = 'flex';
+})();
+</script>
+</body>
+</html>

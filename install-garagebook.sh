@@ -144,6 +144,11 @@ fi
 # ── JWT Secret genereren ──────────────────────────────────────────────────────
 GB_JWT_SECRET=$(openssl rand -hex 32)
 
+# ── Admin wachtwoord instellen ────────────────────────────────────────────────
+ask "Admin wachtwoord voor het beheerportaal (/admin):"
+read -rsp "" ADMIN_PASSWORD; echo
+[[ ${#ADMIN_PASSWORD} -lt 6 ]] && ADMIN_PASSWORD=$(openssl rand -base64 12 | tr -d '=/+') && warn "Te kort — willekeurig wachtwoord gegenereerd."
+
 # ── Samenvatting + bevestiging ────────────────────────────────────────────────
 divider
 echo ""
@@ -500,6 +505,7 @@ PORT=${GB_PORT}
 NODE_ENV=production
 JWT_SECRET=${GB_JWT_SECRET}
 DATA_DIR=/var/lib/garagebook
+ADMIN_PASSWORD=${ADMIN_PASSWORD}
 ENVFILE
 chmod 600 /etc/garagebook.env"
 ok "Omgevingsvariabelen opgeslagen in /etc/garagebook.env"
@@ -650,8 +656,12 @@ echo -e "  ${DIM}Herstarten       :${NC}  pct exec ${CT_ID} -- systemctl restart
 echo -e "  ${DIM}Handm. backup    :${NC}  pct exec ${CT_ID} -- garagebook-backup"
 echo -e "  ${DIM}Backups bekijken :${NC}  pct exec ${CT_ID} -- ls -lh /var/backups/garagebook/"
 echo ""
-echo -e "  ${B}JWT Secret${NC} ${DIM}(bewaar dit op een veilige plek!):${NC}"
+echo -e "  ${B}JWT Secret${NC} ${DIM}(bewaar dit!):${NC}"
 echo -e "  ${Y}${GB_JWT_SECRET}${NC}"
+echo -e ""
+echo -e "  ${B}Admin wachtwoord${NC} ${DIM}(voor /admin portaal):${NC}"
+echo -e "  ${Y}${ADMIN_PASSWORD}${NC}"
+echo -e "  ${DIM}Admin portaal: ${GBURL}/admin${NC}"
 echo -e "  ${DIM}Opgeslagen in container: /etc/garagebook.env${NC}"
 echo ""
 if [[ "${DO_HTTPS,,}" != "j" ]]; then

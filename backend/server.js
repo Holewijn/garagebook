@@ -384,6 +384,206 @@ function getGeneriekeIntervallen(merk, model) {
   ];
 }
 
+// ── ADMIN AUTH ────────────────────────────────────────────────────────────────
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '';
+const ADMIN_JWT_SECRET = JWT_SECRET + '_admin';
+
+function requireAdmin(req, res, next) {
+  const h = req.headers.authorization;
+  if (!h?.startsWith('Bearer ')) return res.status(401).json({ error: 'Niet ingelogd als admin.' });
+  try {
+    const p = jwt.verify(h.slice(7), ADMIN_JWT_SECRET);
+    if (p.role !== 'admin') throw new Error('Geen admin');
+    next();
+  } catch { res.status(401).json({ error: 'Admin sessie verlopen.' }); }
+}
+
+// POST /api/admin/login
+app.post('/api/admin/login', rateLimit({ windowMs: 15*60*1000, max: 10, message: { error: 'Te veel pogingen.' } }), (req, res) => {
+  const { password } = req.body;
+  if (!ADMIN_PASSWORD) return res.status(503).json({ error: 'ADMIN_PASSWORD niet ingesteld in .env' });
+  if (password !== ADMIN_PASSWORD) return res.status(401).json({ error: 'Onjuist admin wachtwoord.' });
+  const token = jwt.sign({ role: 'admin' }, ADMIN_JWT_SECRET, { expiresIn: '8h' });
+  res.json({ token });
+});
+
+// GET /api/admin/stats
+app.get('/api/admin/stats', requireAdmin, (req, res) => {
+  const users     = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
+  const bikes     = db.prepare('SELECT COUNT(*) as c FROM bikes').get().c;
+  const logboek   = db.prepare('SELECT COUNT(*) as c FROM logboek').get().c;
+  const upgrades  = db.prepare('SELECT COUNT(*) as c FROM upgrades').get().c;
+  const herinneringen = db.prepare('SELECT COUNT(*) as c FROM herinneringen').get().c;
+
+  // Schijfgebruik
+  let dbSize = 0, uploadSize = 0, uploadCount = 0;
+  try { dbSize = fs.statSync(path.join(DATA_DIR, 'garagebook.db')).size; } catch {}
+  try {
+    const files = fs.readdirSync(UPLOAD_DIR);
+    uploadCount = files.length;
+    uploadSize = files.reduce((s, f) => {
+      try { return s + fs.statSync(path.join(UPLOAD_DIR, f)).size; } catch { return s; }
+    }, 0);
+  } catch {}
+
+  // Registraties per maand (laatste 6 maanden)
+  const registraties = db.prepare(`
+    SELECT strftime('%Y-%m', created_at) as maand, COUNT(*) as aantal
+    FROM users
+    WHERE created_at >= date('now', '-6 months')
+    GROUP BY maand ORDER BY maand
+  `).all();
+
+  res.json({ users, bikes, logboek, upgrades, herinneringen, dbSize, uploadSize, uploadCount, registraties,
+    versie: require('./package.json').version, uptime: process.uptime() });
+});
+
+// GET /api/admin/users
+app.get('/api/admin/users', requireAdmin, (req, res) => {
+  const users = db.prepare(`
+    SELECT u.id, u.naam, u.email, u.created_at,
+      COUNT(DISTINCT b.id) as bikes,
+      COUNT(DISTINCT l.id) as logboek,
+      COUNT(DISTINCT up.id) as upgrades
+    FROM users u
+    LEFT JOIN bikes b ON b.user_id = u.id
+    LEFT JOIN logboek l ON l.user_id = u.id
+    LEFT JOIN upgrades up ON up.user_id = u.id
+    GROUP BY u.id ORDER BY u.created_at DESC
+  `).all();
+  res.json(users);
+});
+
+// GET /api/admin/users/:id
+app.get('/api/admin/users/:id', requireAdmin, (req, res) => {
+  const user  = db.prepare('SELECT id,naam,email,created_at FROM users WHERE id=?').get(req.params.id);
+  if (!user) return res.status(404).json({ error: 'Gebruiker niet gevonden.' });
+  const bikes = db.prepare('SELECT * FROM bikes WHERE user_id=? ORDER BY created_at').all(req.params.id);
+  const bikeIds = bikes.map(b => b.id);
+  const logboek  = bikeIds.length ? db.prepare(`SELECT * FROM logboek WHERE bike_id IN (${bikeIds.map(()=>'?').join(',')}) ORDER BY datum DESC`).all(...bikeIds) : [];
+  const upgrades = bikeIds.length ? db.prepare(`SELECT * FROM upgrades WHERE bike_id IN (${bikeIds.map(()=>'?').join(',')}) ORDER BY datum DESC`).all(...bikeIds) : [];
+  res.json({ user, bikes, logboek, upgrades });
+});
+
+// PUT /api/admin/users/:id
+app.put('/api/admin/users/:id', requireAdmin, async (req, res) => {
+  const user = db.prepare('SELECT * FROM users WHERE id=?').get(req.params.id);
+  if (!user) return res.status(404).json({ error: 'Niet gevonden.' });
+  const { naam, email, password } = req.body;
+  if (email && email !== user.email) {
+    const exists = db.prepare('SELECT id FROM users WHERE email=? AND id!=?').get(email.toLowerCase(), req.params.id);
+    if (exists) return res.status(409).json({ error: 'E-mailadres al in gebruik.' });
+  }
+  let hash = user.password_hash;
+  if (password && password.length >= 6) hash = await bcrypt.hash(password, 12);
+  db.prepare('UPDATE users SET naam=?, email=?, password_hash=? WHERE id=?')
+    .run(naam||user.naam, email||user.email, hash, req.params.id);
+  res.json(db.prepare('SELECT id,naam,email,created_at FROM users WHERE id=?').get(req.params.id));
+});
+
+// DELETE /api/admin/users/:id
+app.delete('/api/admin/users/:id', requireAdmin, (req, res) => {
+  if (!db.prepare('SELECT id FROM users WHERE id=?').get(req.params.id))
+    return res.status(404).json({ error: 'Niet gevonden.' });
+  db.prepare('DELETE FROM users WHERE id=?').run(req.params.id);
+  res.json({ ok: true });
+});
+
+// GET /api/admin/settings
+app.get('/api/admin/settings', requireAdmin, (req, res) => {
+  res.json({
+    anthropic_key_set: !!(process.env.ANTHROPIC_API_KEY),
+    anthropic_key_preview: process.env.ANTHROPIC_API_KEY
+      ? process.env.ANTHROPIC_API_KEY.slice(0,12) + '...' : null,
+    port: PORT,
+    data_dir: DATA_DIR
+  });
+});
+
+// POST /api/admin/settings
+app.post('/api/admin/settings', requireAdmin, (req, res) => {
+  const { anthropic_api_key } = req.body;
+  if (!anthropic_api_key) return res.status(400).json({ error: 'API key is verplicht.' });
+  const envPath = '/etc/garagebook.env';
+  try {
+    let envContent = '';
+    try { envContent = fs.readFileSync(envPath, 'utf8'); } catch {}
+    if (envContent.includes('ANTHROPIC_API_KEY=')) {
+      envContent = envContent.replace(/ANTHROPIC_API_KEY=.*/g, `ANTHROPIC_API_KEY=${anthropic_api_key}`);
+    } else {
+      envContent += `\nANTHROPIC_API_KEY=${anthropic_api_key}`;
+    }
+    fs.writeFileSync(envPath, envContent.trim() + '\n');
+    process.env.ANTHROPIC_API_KEY = anthropic_api_key;
+    res.json({ ok: true, preview: anthropic_api_key.slice(0,12) + '...' });
+  } catch(e) {
+    res.status(500).json({ error: 'Kon .env niet schrijven: ' + e.message });
+  }
+});
+
+// GET /api/admin/backups
+app.get('/api/admin/backups', requireAdmin, (req, res) => {
+  const backupDir = '/var/backups/garagebook';
+  try {
+    const files = fs.readdirSync(backupDir)
+      .filter(f => f.endsWith('.db.gz') || f.endsWith('.db'))
+      .map(f => {
+        const stat = fs.statSync(path.join(backupDir, f));
+        return { naam: f, grootte: stat.size, datum: stat.mtime.toISOString() };
+      })
+      .sort((a, b) => new Date(b.datum) - new Date(a.datum));
+    res.json(files);
+  } catch { res.json([]); }
+});
+
+// GET /api/admin/backups/:naam/download
+app.get('/api/admin/backups/:naam/download', (req, res, next) => {
+  // Accepteer token via query param voor downloads (browser navigatie)
+  const qToken = req.query.token;
+  if (qToken) req.headers.authorization = 'Bearer ' + qToken;
+  next();
+}, requireAdmin, (req, res) => {
+  const naam = path.basename(req.params.naam);
+  const filePath = path.join('/var/backups/garagebook', naam);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Bestand niet gevonden.' });
+  res.download(filePath, naam);
+});
+
+// POST /api/admin/backups/create
+app.post('/api/admin/backups/create', requireAdmin, (req, res) => {
+  const { execSync } = require('child_process');
+  try {
+    execSync('/usr/local/bin/garagebook-backup', { timeout: 30000 });
+    res.json({ ok: true });
+  } catch(e) {
+    // Fallback: directe SQLite backup
+    try {
+      const backupDir = '/var/backups/garagebook';
+      if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+      const datum = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+      const dest = path.join(backupDir, `garagebook_${datum}.db`);
+      db.backup(dest).then(() => {
+        const { execSync: ex } = require('child_process');
+        try { ex(`gzip -9 "${dest}"`); } catch {}
+        res.json({ ok: true });
+      }).catch(err => res.status(500).json({ error: err.message }));
+    } catch(e2) { res.status(500).json({ error: e2.message }); }
+  }
+});
+
+// DELETE /api/admin/backups/:naam
+app.delete('/api/admin/backups/:naam', requireAdmin, (req, res) => {
+  const naam = path.basename(req.params.naam);
+  const filePath = path.join('/var/backups/garagebook', naam);
+  if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'Niet gevonden.' });
+  fs.unlinkSync(filePath);
+  res.json({ ok: true });
+});
+
+// Serve admin frontend
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, '../frontend/admin.html')));
+
+
 // ── CATCH-ALL ─────────────────────────────────────────────────────────────────
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, '../frontend/index.html')));
 app.listen(PORT, () => console.log(`GarageBook v${require('./package.json').version} running on port ${PORT}`));

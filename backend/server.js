@@ -32,6 +32,7 @@ db.exec(`
     id TEXT PRIMARY KEY, user_id INTEGER NOT NULL,
     merk TEXT NOT NULL, model TEXT NOT NULL, jaar TEXT,
     km INTEGER DEFAULT 0, kenteken TEXT, icon TEXT DEFAULT '🏍️',
+    voertuigtype TEXT DEFAULT 'motor',
     share_token TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -73,6 +74,7 @@ migrate('log_notities',  'ALTER TABLE logboek ADD COLUMN notities TEXT');
 migrate('up_foto',       'ALTER TABLE upgrades ADD COLUMN foto TEXT');
 migrate('up_beschr',     'ALTER TABLE upgrades ADD COLUMN beschrijving TEXT');
 migrate('bike_share',    'ALTER TABLE bikes ADD COLUMN share_token TEXT');
+migrate('bike_type',     'ALTER TABLE bikes ADD COLUMN voertuigtype TEXT DEFAULT \'motor\'');
 
 // ── FOTO UPLOAD ───────────────────────────────────────────────────────────────
 const storage = multer.diskStorage({
@@ -152,20 +154,20 @@ app.get('/api/bikes', requireAuth, (req, res) =>
   res.json(db.prepare('SELECT * FROM bikes WHERE user_id=? ORDER BY created_at').all(req.userId)));
 
 app.post('/api/bikes', requireAuth, (req, res) => {
-  const { merk, model, jaar, km, kenteken, icon } = req.body;
+  const { merk, model, jaar, km, kenteken, icon, voertuigtype } = req.body;
   if (!merk || !model) return res.status(400).json({ error: 'Merk en model zijn verplicht.' });
   const id = uid();
-  db.prepare('INSERT INTO bikes (id,user_id,merk,model,jaar,km,kenteken,icon) VALUES (?,?,?,?,?,?,?,?)')
-    .run(id, req.userId, merk, model, jaar||'', km||0, kenteken||'', icon||'🏍️');
+  db.prepare('INSERT INTO bikes (id,user_id,merk,model,jaar,km,kenteken,icon,voertuigtype) VALUES (?,?,?,?,?,?,?,?,?)')
+    .run(id, req.userId, merk, model, jaar||'', km||0, kenteken||'', icon||'🏍️', voertuigtype||'motor');
   res.status(201).json(db.prepare('SELECT * FROM bikes WHERE id=?').get(id));
 });
 
 app.put('/api/bikes/:id', requireAuth, (req, res) => {
   const b = db.prepare('SELECT * FROM bikes WHERE id=? AND user_id=?').get(req.params.id, req.userId);
   if (!b) return res.status(404).json({ error: 'Niet gevonden.' });
-  const { merk, model, jaar, km, kenteken, icon } = req.body;
-  db.prepare('UPDATE bikes SET merk=?,model=?,jaar=?,km=?,kenteken=?,icon=? WHERE id=?')
-    .run(merk||b.merk, model||b.model, jaar??b.jaar, km??b.km, kenteken??b.kenteken, icon||b.icon, req.params.id);
+  const { merk, model, jaar, km, kenteken, icon, voertuigtype } = req.body;
+  db.prepare('UPDATE bikes SET merk=?,model=?,jaar=?,km=?,kenteken=?,icon=?,voertuigtype=? WHERE id=?')
+    .run(merk||b.merk, model||b.model, jaar??b.jaar, km??b.km, kenteken??b.kenteken, icon||b.icon, voertuigtype||b.voertuigtype, req.params.id);
   res.json(db.prepare('SELECT * FROM bikes WHERE id=?').get(req.params.id));
 });
 
@@ -318,15 +320,16 @@ app.get('/api/version', (req, res) => {
 
 // ── AI ONDERHOUDSINTERVALLEN ──────────────────────────────────────────────────
 app.post('/api/ai/onderhoudsintervallen', requireAuth, async (req, res) => {
-  const { merk, model, jaar } = req.body;
+  const { merk, model, jaar, voertuigtype } = req.body;
   if (!merk || !model) return res.status(400).json({ error: 'Merk en model zijn verplicht.' });
+  const voertuigLabel = voertuigtype === 'auto' ? 'personenauto' : voertuigtype === 'camper' ? 'camper/RV' : 'motorfiets';
 
   const ANTHROPIC_KEY = process.env.ANTHROPIC_API_KEY || '';
   if (!ANTHROPIC_KEY) {
     return res.json({ intervallen: getGeneriekeIntervallen(merk, model), bron: 'generiek', ai: false });
   }
 
-  const prompt = `Zoek de officiele onderhoudsintervallen voor de ${merk} ${model}${jaar ? ' (' + jaar + ')' : ''}.
+  const prompt = `Zoek de officiele onderhoudsintervallen voor de ${merk} ${model}${jaar ? ' (' + jaar + ')' : ''} (${voertuigLabel}).
 Geef ALLEEN een JSON array terug zonder markdown of uitleg.
 Formaat exact:
 [{"titel":"Motorolie + filter wisselen","km_interval":6000,"datum_maanden":12,"prioriteit":"hoog"},{"titel":"Luchtfilter vervangen","km_interval":12000,"datum_maanden":24,"prioriteit":"normaal"}]
@@ -362,14 +365,42 @@ Zoek de officiele servicehandleiding of dealerspecificaties. Maximaal 12 items.`
     if (startIdx === -1 || endIdx === -1) throw new Error('Geen JSON array gevonden');
     const intervallen = JSON.parse(clean.slice(startIdx, endIdx + 1));
     if (!Array.isArray(intervallen)) throw new Error('Onverwacht formaat');
-    res.json({ intervallen, bron: merk + ' ' + model + ' servicehandleiding (AI + web search)', ai: true });
+    res.json({ intervallen, bron: merk + ' ' + model + ' servicehandleiding (AI + web search)', ai: true, voertuigtype });
   } catch (err) {
     console.error('AI interval fout:', err.message);
-    res.json({ intervallen: getGeneriekeIntervallen(merk, model), bron: 'generieke onderhoudsintervallen', ai: false, fout: err.message });
+    res.json({ intervallen: getGeneriekeIntervallen(merk, model, voertuigtype), bron: 'generieke onderhoudsintervallen', ai: false, fout: err.message, voertuigtype });
   }
 });
 
-function getGeneriekeIntervallen(merk, model) {
+function getGeneriekeIntervallen(merk, model, voertuigtype) {
+  if (voertuigtype === 'auto') return [
+    { titel: 'Motorolie + filter wisselen', km_interval: 15000, datum_maanden: 12, prioriteit: 'hoog' },
+    { titel: 'Luchtfilter vervangen', km_interval: 30000, datum_maanden: 36, prioriteit: 'normaal' },
+    { titel: 'Interieurfilter (cabin filter)', km_interval: 15000, datum_maanden: 12, prioriteit: 'normaal' },
+    { titel: 'Bougie(s) vervangen', km_interval: 30000, datum_maanden: 48, prioriteit: 'normaal' },
+    { titel: 'Remvloeistof vervangen', km_interval: null, datum_maanden: 24, prioriteit: 'hoog' },
+    { titel: 'Koelvloeistof vervangen', km_interval: null, datum_maanden: 48, prioriteit: 'normaal' },
+    { titel: 'Transmissie-olie vervangen', km_interval: 60000, datum_maanden: null, prioriteit: 'normaal' },
+    { titel: 'Remblokken voor controleren', km_interval: 20000, datum_maanden: 24, prioriteit: 'hoog' },
+    { titel: 'Remblokken achter controleren', km_interval: 30000, datum_maanden: 36, prioriteit: 'normaal' },
+    { titel: 'Ruitenwisserbladen vervangen', km_interval: null, datum_maanden: 12, prioriteit: 'laag' },
+    { titel: 'Bandenspanning controleren', km_interval: 1000, datum_maanden: 1, prioriteit: 'hoog' },
+    { titel: 'APK keuring', km_interval: null, datum_maanden: 12, prioriteit: 'hoog' },
+  ];
+  if (voertuigtype === 'camper') return [
+    { titel: 'Motorolie + filter wisselen', km_interval: 10000, datum_maanden: 12, prioriteit: 'hoog' },
+    { titel: 'Luchtfilter vervangen', km_interval: 20000, datum_maanden: 24, prioriteit: 'normaal' },
+    { titel: 'Remvloeistof vervangen', km_interval: null, datum_maanden: 24, prioriteit: 'hoog' },
+    { titel: 'Koelvloeistof vervangen', km_interval: null, datum_maanden: 48, prioriteit: 'normaal' },
+    { titel: 'Remblokken controleren', km_interval: 20000, datum_maanden: 24, prioriteit: 'hoog' },
+    { titel: 'Bandenspanning controleren (incl. reservewiel)', km_interval: 1000, datum_maanden: 1, prioriteit: 'hoog' },
+    { titel: 'Gasinstallatie keuren', km_interval: null, datum_maanden: 24, prioriteit: 'hoog' },
+    { titel: 'Waterpomp en leidingen controleren', km_interval: null, datum_maanden: 12, prioriteit: 'normaal' },
+    { titel: 'Luifel en afdichting controleren', km_interval: null, datum_maanden: 12, prioriteit: 'normaal' },
+    { titel: 'Accu (leisure battery) testen', km_interval: null, datum_maanden: 12, prioriteit: 'normaal' },
+    { titel: 'APK keuring', km_interval: null, datum_maanden: 12, prioriteit: 'hoog' },
+  ];
+  // motor (default)
   return [
     { titel: 'Motorolie + filter wisselen', km_interval: 6000, datum_maanden: 12, prioriteit: 'hoog' },
     { titel: 'Luchtfilter vervangen', km_interval: 12000, datum_maanden: 24, prioriteit: 'normaal' },

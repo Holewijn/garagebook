@@ -236,6 +236,10 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-he
 .icon-opt{width:42px;height:42px;border-radius:var(--radius-sm);border:1.5px solid var(--border2);background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;transition:all .15s}
 .icon-opt:hover{border-color:var(--accent)}
 .icon-opt.selected{border:2px solid var(--accent);background:var(--accent-bg)}
+.type-opt{display:flex;flex-direction:column;align-items:center;gap:6px;padding:.75rem .5rem;border:1.5px solid var(--border2);border-radius:var(--radius);background:var(--bg);cursor:pointer;transition:all .15s;font-size:13px;font-weight:500;color:var(--ink3);text-align:center;font-size:22px}
+.type-opt span{font-size:13px;font-weight:600;display:block}
+.type-opt:hover{border-color:var(--accent);color:var(--ink)}
+.type-opt.active{border:2px solid var(--accent);background:var(--accent-bg);color:var(--accent)}
 
 /* ── HERINNERINGEN ── */
 .herinnering-card{display:flex;align-items:center;gap:1rem;padding:.875rem 1.125rem;border-bottom:1px solid var(--border)}
@@ -361,7 +365,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-he
 <!-- ══ AUTH ══ -->
 <div id="auth-screen">
   <div class="auth-logo"><div class="auth-logo-icon">🏍️</div>GarageBook</div>
-  <div class="auth-tagline">Jouw digitale motorlogboek</div>
+  <div class="auth-tagline">Jouw digitale voertuiglogboek</div>
   <div class="auth-card">
     <div class="auth-tabs">
       <button class="auth-tab active" onclick="showAuthTab('login')">Inloggen</button>
@@ -382,7 +386,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-he
       <button class="auth-submit" id="reg-btn" onclick="doRegister()">Account aanmaken</button>
     </div>
   </div>
-  <div class="auth-footer">GarageBook — Bouw aan de waarde van je motor</div>
+  <div class="auth-footer">GarageBook — Bouw aan de waarde van je voertuig</div>
 </div>
 
 <!-- ══ PUBLIEKE SHARE PAGINA ══ -->
@@ -425,7 +429,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-he
 
   <div class="layout">
     <div class="sidebar">
-      <div class="sidebar-section-label">Mijn motoren</div>
+      <div class="sidebar-section-label">Mijn voertuigen</div>
       <div class="bike-list" id="bike-list"></div>
       <button class="sidebar-add-bike" onclick="openModal('add-bike')">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>
@@ -469,8 +473,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-he
       <div id="no-bike">
         <div class="no-bike-icon">🏍️</div>
         <div class="no-bike-title">Geen motor geselecteerd</div>
-        <div class="no-bike-sub">Voeg je eerste motor toe om te beginnen</div>
-        <button class="btn btn-primary" style="margin-top:1rem" onclick="openModal('add-bike')">+ Motor toevoegen</button>
+        <div class="no-bike-sub">Voeg je eerste voertuig toe om te beginnen</div>
+        <button class="btn btn-primary" style="margin-top:1rem" onclick="openModal('add-bike')">+ Voertuig toevoegen</button>
       </div>
 
       <div id="tabs-wrap" style="display:none">
@@ -529,15 +533,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-he
             <div class="stat-card"><div class="stat-label">Onderdelen</div><div class="stat-value" id="up-aantal">—</div></div>
           </div>
           <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-bottom:1.25rem;align-items:center">
-            <div class="filter-row" style="margin-bottom:0" id="up-filters">
-              <button class="filter-chip active" onclick="filterUpgrades('alle',this)">Alle</button>
-              <button class="filter-chip" onclick="filterUpgrades('uitlaat',this)">Uitlaat</button>
-              <button class="filter-chip" onclick="filterUpgrades('remmen',this)">Remmen</button>
-              <button class="filter-chip" onclick="filterUpgrades('ophanging',this)">Ophanging</button>
-              <button class="filter-chip" onclick="filterUpgrades('styling',this)">Styling</button>
-              <button class="filter-chip" onclick="filterUpgrades('elektrisch',this)">Elektrisch</button>
-              <button class="filter-chip" onclick="filterUpgrades('motor',this)">Motor</button>
-            </div>
+            <div class="filter-row" style="margin-bottom:0" id="up-filters"></div>
             <div class="sort-row" style="margin-bottom:0;margin-left:auto">
               <span class="sort-label">Sorteren:</span>
               <button class="sort-btn active desc" id="up-sort-datum" onclick="setUpSort('datum',this)">Datum</button>
@@ -588,7 +584,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-he
 
         <!-- DEELLINK -->
         <div id="tab-delen" class="tab-content">
-          <div class="page-header"><div><div class="page-title">Deellink</div><div class="page-sub">Deel je motorlogboek read-only met anderen</div></div></div>
+          <div class="page-header"><div><div class="page-title">Deellink</div><div class="page-sub">Deel je voertuiglogboek read-only met anderen</div></div></div>
           <div class="section">
             <div class="modal-body">
               <p style="font-size:14px;color:var(--ink3);margin-bottom:1.25rem">Met een deellink kunnen anderen jouw logboek bekijken zonder account — ze kunnen niets aanpassen of verwijderen.</p>
@@ -620,13 +616,30 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-he
     <div class="modal-head">
       <div>
         <div class="modal-title" id="add-bike-modal-title">Motor toevoegen</div>
-        <div style="font-size:12px;color:var(--ink4);margin-top:2px" id="add-bike-step-indicator">Stap 1 van 2 — Motorgegevens</div>
+        <div style="font-size:12px;color:var(--ink4);margin-top:2px" id="add-bike-step-indicator">Stap 1 van 2 — Voertuiggegevens</div>
       </div>
       <button class="modal-close" onclick="closeModal('add-bike')">×</button>
     </div>
 
-    <!-- STAP 1: Motorgegevens -->
+    <!-- STAP 1: Voertuiggegevens -->
     <div id="add-bike-stap1" class="modal-body">
+      <div class="form-group">
+        <label>Voertuigtype</label>
+        <div style="display:flex;gap:.75rem;margin-top:4px" id="bk-type-select">
+          <label style="flex:1;cursor:pointer">
+            <input type="radio" name="bk-type" value="motor" checked onchange="onVoertuigTypeChange()" style="display:none">
+            <div class="type-opt active" data-type="motor">🏍️<span>Motor</span></div>
+          </label>
+          <label style="flex:1;cursor:pointer">
+            <input type="radio" name="bk-type" value="auto" onchange="onVoertuigTypeChange()" style="display:none">
+            <div class="type-opt" data-type="auto">🚗<span>Auto</span></div>
+          </label>
+          <label style="flex:1;cursor:pointer">
+            <input type="radio" name="bk-type" value="camper" onchange="onVoertuigTypeChange()" style="display:none">
+            <div class="type-opt" data-type="camper">🚌<span>Camper</span></div>
+          </label>
+        </div>
+      </div>
       <div class="form-row">
         <div class="form-group"><label>Merk</label><input type="text" id="bk-merk" placeholder="CFMOTO, Yamaha, Honda…" autocomplete="off"></div>
         <div class="form-group"><label>Model</label><input type="text" id="bk-model" placeholder="800MT, MT-07, CB500F…" autocomplete="off"></div>
@@ -749,7 +762,7 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-he
       <div class="form-group"><label>Beschrijving</label><textarea id="up-beschrijving" placeholder="Reden aankoop, ervaringen, resultaat…"></textarea></div>
       <div class="form-row">
         <div class="form-group"><label>Merk</label><input type="text" id="up-merk" placeholder="Akrapovič, Brembo…"></div>
-        <div class="form-group"><label>Categorie</label><select id="up-cat"><option value="uitlaat">Uitlaat</option><option value="remmen">Remmen</option><option value="ophanging">Ophanging</option><option value="styling">Styling</option><option value="elektrisch">Elektrisch</option><option value="motor">Motor</option><option value="overig">Overig</option></select></div>
+        <div class="form-group"><label>Categorie</label><select id="up-cat"></select></div>
       </div>
       <div class="form-row">
         <div class="form-group"><label>Kosten (€)</label><input type="number" id="up-kosten" placeholder="0.00" step="0.01"></div>
@@ -791,6 +804,46 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);min-he
 <div id="toast"></div>
 
 <script>
+
+// ── VOERTUIGTYPE CONFIGURATIE ─────────────────────────────────────────────────
+const VOERTUIG = {
+  motor: {
+    label:'Motor', iconen:['🏍️','🛵','⚡','🔥','🏁','💀','🤘','🌍'], defaultIcon:'🏍️',
+    upgradeCats:[
+      {value:'uitlaat',label:'Uitlaat'},{value:'remmen',label:'Remmen'},
+      {value:'ophanging',label:'Ophanging'},{value:'styling',label:'Styling'},
+      {value:'elektrisch',label:'Elektrisch'},{value:'motor',label:'Motor'},{value:'overig',label:'Overig'}
+    ],
+    placeholder:{merk:'CFMOTO, Yamaha, Honda…',model:'800MT, MT-07, CB500F…'}
+  },
+  auto: {
+    label:'Auto', iconen:['🚗','🚙','🏎️','🚕','⚡','🔥','🏁','🌍'], defaultIcon:'🚗',
+    upgradeCats:[
+      {value:'motor',label:'Motor & Aandrijving'},{value:'remmen',label:'Remmen'},
+      {value:'ophanging',label:'Ophanging'},{value:'exterieur',label:'Exterieur'},
+      {value:'interieur',label:'Interieur'},{value:'elektrisch',label:'Elektrisch'},
+      {value:'banden',label:'Banden & Velgen'},{value:'overig',label:'Overig'}
+    ],
+    placeholder:{merk:'Toyota, BMW, Volkswagen…',model:'Yaris, 3-serie, Golf…'}
+  },
+  camper: {
+    label:'Camper', iconen:['🚌','🚐','🏕️','🌍','⚡','🔧','🏠','🚎'], defaultIcon:'🚌',
+    upgradeCats:[
+      {value:'motor',label:'Motor & Aandrijving'},{value:'remmen',label:'Remmen'},
+      {value:'interieur',label:'Interieur & Woonruimte'},{value:'elektrisch',label:'Elektrisch & Zonnepanelen'},
+      {value:'sanitair',label:'Water & Sanitair'},{value:'gas',label:'Gas & Verwarming'},
+      {value:'exterieur',label:'Exterieur & Luifel'},{value:'overig',label:'Overig'}
+    ],
+    placeholder:{merk:'Hymer, Fiat, Mercedes…',model:'B-klasse, Ducato, Sprinter…'}
+  }
+};
+
+function getVoertuigType(bikeId) {
+  const b = bikes.find(x => x.id === (bikeId||CBid));
+  return b?.voertuigtype || 'motor';
+}
+function getVC(bikeId) { return VOERTUIG[getVoertuigType(bikeId)] || VOERTUIG.motor; }
+
 // ── STATE ─────────────────────────────────────────────────────────────────────
 let TOKEN = localStorage.getItem('gb_token');
 let USER = null, bikes = [], CBid = null;
@@ -948,7 +1001,7 @@ function renderBikeList() {
       <div class="bike-icon">${b.icon}</div>
       <div class="bike-info">
         <div class="bike-name">${b.merk} ${b.model}</div>
-        <div class="bike-sub">${b.jaar}${b.kenteken?' · '+b.kenteken:''}</div>
+        <div class="bike-sub">${b.jaar}${b.kenteken?' · '+b.kenteken:''} · ${(VOERTUIG[b.voertuigtype]||VOERTUIG.motor).label}</div>
       </div>
       <div class="bike-km-pill">${bikeKm(b)} km</div>
       <button class="bike-del" onclick="delBike(event,'${b.id}')">×</button>
@@ -973,6 +1026,7 @@ async function loadBikeData() {
   // Share token ophalen
   const bike=bikes.find(b=>b.id===CBid);
   currentShareToken=bike?.share_token||null;
+  upF='alle'; // reset upgrade filter bij wisselen van voertuig
   render();
 }
 
@@ -980,6 +1034,47 @@ function showNoBike() { document.getElementById('no-bike').style.display='flex';
 function showTabs()   { document.getElementById('no-bike').style.display='none'; document.getElementById('tabs-wrap').style.display='block'; }
 
 function selIcon(el) { document.querySelectorAll('.icon-opt').forEach(e=>e.classList.remove('selected')); el.classList.add('selected'); chosenIcon=el.dataset.icon; }
+
+function onVoertuigTypeChange() {
+  const type = document.querySelector('input[name="bk-type"]:checked')?.value || 'motor';
+  const vc = VOERTUIG[type] || VOERTUIG.motor;
+  // Highlight actieve type knop
+  document.querySelectorAll('.type-opt').forEach(el => {
+    el.classList.toggle('active', el.dataset.type === type);
+  });
+  // Iconen bijwerken
+  const iconSelect = document.getElementById('icon-select');
+  if (iconSelect) {
+    iconSelect.innerHTML = vc.iconen.map((ic,i) =>
+      `<div class="icon-opt${i===0?' selected':''}" data-icon="${ic}" onclick="selIcon(this)">${ic}</div>`
+    ).join('');
+    chosenIcon = vc.iconen[0];
+  }
+  // Placeholders bijwerken
+  const merkEl = document.getElementById('bk-merk');
+  const modelEl = document.getElementById('bk-model');
+  if (merkEl) merkEl.placeholder = vc.placeholder.merk;
+  if (modelEl) modelEl.placeholder = vc.placeholder.model;
+  // Step indicator
+  document.getElementById('add-bike-step-indicator').textContent = 'Stap 1 van 2 — ' + vc.label + 'gegevens';
+  document.getElementById('add-bike-modal-title').textContent = vc.label + ' toevoegen';
+}
+
+function renderUpgradeFilters() {
+  const cats = getVC().upgradeCats;
+  const el = document.getElementById('up-filters');
+  if (!el) return;
+  el.innerHTML = `<button class="filter-chip active" onclick="filterUpgrades('alle',this)">Alle</button>` +
+    cats.map(c => `<button class="filter-chip" onclick="filterUpgrades('${c.value}',this)">${c.label}</button>`).join('');
+}
+
+function renderUpgradeCatSelect() {
+  const cats = getVC().upgradeCats;
+  const el = document.getElementById('up-cat');
+  if (!el) return;
+  const cur = el.value;
+  el.innerHTML = cats.map(c => `<option value="${c.value}"${c.value===cur?' selected':''}>${c.label}</option>`).join('');
+}
 
 // ── AI ONDERHOUDSINTERVALLEN FLOW ────────────────────────────────────────────
 let aiIntervallen = [];
@@ -1013,7 +1108,8 @@ async function addBikeStap2() {
   document.getElementById('ai-loading-title').textContent=`Onderhoudsintervallen zoeken voor ${merk} ${model}...`;
 
   try {
-    const data = await api('POST','/ai/onderhoudsintervallen',{merk,model,jaar});
+    const voertuigtype=document.querySelector('input[name="bk-type"]:checked')?.value||'motor';
+    const data = await api('POST','/ai/onderhoudsintervallen',{merk,model,jaar,voertuigtype});
     aiIntervallen = data.intervallen || [];
     document.getElementById('ai-loading').style.display='none';
     document.getElementById('ai-resultaat').style.display='block';
@@ -1081,7 +1177,8 @@ async function saveBike(withAI=true) {
   const model=document.getElementById('bk-model').value.trim();
   if (!merk||!model) return toast('Vul merk en model in.','err');
   try {
-    const b=await api('POST','/bikes',{merk,model,jaar:document.getElementById('bk-jaar').value,km:parseInt(document.getElementById('bk-km').value)||0,kenteken:document.getElementById('bk-kenteken').value.trim(),icon:chosenIcon});
+    const voertuigtype=document.querySelector('input[name="bk-type"]:checked')?.value||'motor';
+    const b=await api('POST','/bikes',{merk,model,jaar:document.getElementById('bk-jaar').value,km:parseInt(document.getElementById('bk-km').value)||0,kenteken:document.getElementById('bk-kenteken').value.trim(),icon:chosenIcon,voertuigtype});
     bikes.push(b);
     ['bk-merk','bk-model','bk-jaar','bk-km','bk-kenteken'].forEach(id=>document.getElementById(id).value='');
     closeModal('add-bike');
@@ -1099,7 +1196,8 @@ async function saveBikeMetHerinneringen() {
     const merk=document.getElementById('bk-merk').value.trim();
     const model=document.getElementById('bk-model').value.trim();
     if (!merk||!model) return toast('Vul merk en model in.','err');
-    const b=await api('POST','/bikes',{merk,model,jaar:document.getElementById('bk-jaar').value,km:parseInt(document.getElementById('bk-km').value)||0,kenteken:document.getElementById('bk-kenteken').value.trim(),icon:chosenIcon});
+    const voertuigtype=document.querySelector('input[name="bk-type"]:checked')?.value||'motor';
+    const b=await api('POST','/bikes',{merk,model,jaar:document.getElementById('bk-jaar').value,km:parseInt(document.getElementById('bk-km').value)||0,kenteken:document.getElementById('bk-kenteken').value.trim(),icon:chosenIcon,voertuigtype});
     bikes.push(b);
     ['bk-merk','bk-model','bk-jaar','bk-km','bk-kenteken'].forEach(id=>document.getElementById(id).value='');
 
@@ -1225,7 +1323,8 @@ function openModal(t, data=null) {
     document.getElementById('up-naam').value=data?.naam||'';
     document.getElementById('up-beschrijving').value=data?.beschrijving||'';
     document.getElementById('up-merk').value=data?.merk||'';
-    document.getElementById('up-cat').value=data?.cat||'uitlaat';
+    renderUpgradeCatSelect();
+    document.getElementById('up-cat').value=data?.cat||getVC().upgradeCats[0]?.value||'overig';
     document.getElementById('up-kosten').value=data?.kosten||'';
     document.getElementById('up-datum').value=data?.datum||new Date().toISOString().slice(0,10);
     document.getElementById('up-installer').value=data?.installer||'';
@@ -1440,7 +1539,7 @@ function render() {
     ? logData.slice(0,5).map(i=>entryCardHTML(i,'log')).join('')
     : emptyHTML('📋','Nog geen activiteit','Log je eerste onderhoudsbeurt');
 
-  renderLog(); renderUpgrades(); renderHerinneringen(alerts); renderStatistieken(); renderTijdlijn(); renderShareTab();
+  renderUpgradeFilters(); renderLog(); renderUpgrades(); renderHerinneringen(alerts); renderStatistieken(); renderTijdlijn(); renderShareTab();
   renderBikeList();
 }
 

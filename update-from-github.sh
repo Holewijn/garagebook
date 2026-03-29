@@ -7,7 +7,7 @@
 #
 #  Eerste keer: stel GITHUB_REPO in onderaan dit script of geef het mee
 #  als omgevingsvariabele:
-#    GITHUB_REPO=MichielHolewijn/garagebook bash update-from-github.sh 118
+#    GITHUB_REPO=Holewijn/garagebook bash update-from-github.sh 118
 # ==============================================================================
 
 set -euo pipefail
@@ -25,7 +25,7 @@ command -v git  &>/dev/null || { info "Git installeren..."; apt-get install -y -
 
 # ── Configuratie ──────────────────────────────────────────────────────────────
 # Pas GITHUB_REPO aan naar jouw GitHub gebruikersnaam/repository-naam
-GITHUB_REPO="${GITHUB_REPO:-MichielHolewijn/garagebook}"
+GITHUB_REPO="${GITHUB_REPO:-Holewijn/garagebook}"
 REPO_URL="https://github.com/${GITHUB_REPO}.git"
 REPO_DIR="${REPO_DIR:-/root/garagebook-repo}"
 BRANCH="${2:-main}"

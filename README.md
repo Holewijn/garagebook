@@ -61,7 +61,7 @@ GarageBook helpt je het complete verhaal van je motor vast te leggen: onderhouds
 ```bash
 # Repository klonen op de Proxmox host
 apt-get install -y git
-git clone https://github.com/JOUW_NAAM/garagebook.git /root/garagebook-repo
+git clone https://github.com/Holewijn/garagebook.git /root/garagebook-repo
 cd /root/garagebook-repo
 chmod +x install-garagebook.sh update-from-github.sh
 bash install-garagebook.sh
@@ -80,7 +80,7 @@ garagebook-update
 
 Of handmatig:
 ```bash
-GITHUB_REPO=JOUW_NAAM/garagebook bash /root/garagebook-repo/update-from-github.sh 118
+GITHUB_REPO=Holewijn/garagebook bash /root/garagebook-repo/update-from-github.sh 118
 ```
 
 ---

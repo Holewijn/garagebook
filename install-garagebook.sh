@@ -514,7 +514,7 @@ ok "Omgevingsvariabelen opgeslagen in /etc/garagebook.env"
 pct exec "$CT_ID" -- bash -c "cat > /etc/systemd/system/garagebook.service << 'SVCFILE'
 [Unit]
 Description=GarageBook — Motoronderhoud & Upgrades
-Documentation=https://github.com/yourusername/garagebook
+Documentation=https://github.com/Holewijn/garagebook
 After=network-online.target
 Wants=network-online.target
 
